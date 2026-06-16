@@ -25,6 +25,24 @@ app.config.from_object(Config)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
+
+# ---------- Create tables on startup ----------
+with app.app_context():
+    db.create_all()
+    # Create admin user if it doesn't exist
+    admin_email = "admin@quickscope.com"
+    if not User.query.filter_by(email=admin_email).first():
+        admin = User(
+            email=admin_email,
+            password_hash=generate_password_hash("admin123"),
+            first_name="Admin",
+            last_name="User",
+            role=UserRole.ADMIN
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("Default admin created: admin@quickscope.com / admin123")
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -792,18 +810,4 @@ def api_booking_detail(booking_id):
 
 # ==================== MAIN ====================
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        admin_email = "admin@quickscope.com"
-        if not User.query.filter_by(email=admin_email).first():
-            admin = User(
-                email=admin_email,
-                password_hash=generate_password_hash("admin123"),
-                first_name="Admin",
-                last_name="User",
-                role=UserRole.ADMIN
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print("Default admin created: admin@quickscope.com / admin123")
     app.run(debug=True, port=5000)

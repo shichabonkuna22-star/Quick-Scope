@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="container animate-on-scroll">
+    <h1>Manage Users</h1>
+    <table class="admin-table">
+        <thead>
+            <tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin_update_role', user_id=user.id) }}" style="display:inline;">
+                        <select name="role" onchange="this.form.submit()">
+                            <option value="customer" {% if user.role.value == 'customer' %}selected{% endif %}>Customer</option>
+                            <option value="provider" {% if user.role.value == 'provider' %}selected{% endif %}>Provider</option>
+                            <option value="admin" {% if user.role.value == 'admin' %}selected{% endif %}>Admin</option>
+                        </select>
+                    </form>
+                </td>
+                <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin_delete_user', user_id=user.id) }}" onsubmit="return confirm('Delete this user?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

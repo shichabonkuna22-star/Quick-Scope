@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>Welcome Back</h1>
+            <p>Log in to your QuickScope account</p>
+        </div>
+        
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required placeholder="you@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required placeholder="••••••••">
+            </div>
+            
+            <div class="form-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="remember" id="remember">
+                    <span>Remember me</span>
+                </label>
+                <a href="#" class="text-link">Forgot password?</a>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block btn-lg">Log In</button>
+        </form>
+        
+        <p class="terms-notice" style="text-align:center; font-size:0.85rem; color:var(--gray); margin:1rem 0;">
+            By logging in, you agree to our <a href="{{ url_for('terms') }}" target="_blank">Terms & Conditions</a>.
+        </p>
+        
+        <div class="auth-divider">
+            <span>or continue with</span>
+        </div>
+        
+        <a href="{{ url_for('login_google') }}" class="btn btn-google btn-block">
+            <i class="fab fa-google"></i>
+            Log in with Google
+        </a>
+        
+        <p class="auth-footer">
+            Don't have an account? <a href="{{ url_for('register') }}">Sign up</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

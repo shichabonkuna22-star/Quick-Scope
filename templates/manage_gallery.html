@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Gallery{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>My Work Gallery</h1>
+    
+    <div class="form-page" style="max-width: 500px;">
+        <h3>Upload New Image</h3>
+        <form method="POST" action="{{ url_for('upload_gallery_image') }}" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Image</label>
+                <input type="file" name="gallery_image" accept="image/*" required>
+            </div>
+            <div class="form-group">
+                <label>Caption (optional)</label>
+                <input type="text" name="caption" placeholder="Describe this work...">
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+    </div>
+    
+    <h2>Your Images</h2>
+    {% if images %}
+        <div class="gallery-grid">
+            {% for img in images %}
+            <div class="gallery-item">
+                <img src="{{ get_image_url(img.image_filename) }}" alt="{{ img.caption or 'Work sample' }}">
+                {% if img.caption %}
+                    <p class="gallery-caption">{{ img.caption }}</p>
+                {% endif %}
+                <form method="POST" action="{{ url_for('delete_gallery_image', image_id=img.id) }}" onsubmit="return confirm('Delete this image?');">
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">No images yet. Upload your work samples.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Reviews{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Manage Reviews</h1>
+    <table class="admin-table">
+        <thead>
+            <tr><th>ID</th><th>Service</th><th>Customer</th><th>Provider</th><th>Rating</th><th>Comment</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for review in reviews %}
+            <tr>
+                <td>{{ review.id }}</td>
+                <td>{{ review.service.title }}</td>
+                <td>{{ review.reviewer.full_name }}</td>
+                <td>{{ review.reviewed_provider.full_name }}</td>
+                <td>{{ review.rating }}/5</td>
+                <td>{{ review.comment[:50] }}{% if review.comment|length > 50 %}...{% endif %}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin_delete_review', review_id=review.id) }}" onsubmit="return confirm('Delete this review?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

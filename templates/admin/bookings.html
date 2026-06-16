@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Bookings{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Manage Bookings</h1>
+    <table class="admin-table">
+        <thead>
+            <tr><th>ID</th><th>Service</th><th>Customer</th><th>Provider</th><th>Price</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.id }}</td>
+                <td>{{ booking.service.title }}</td>
+                <td>{{ booking.customer.full_name }}</td>
+                <td>{{ booking.provider_booking.full_name }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(booking.agreed_price or 0) }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin_update_booking_status', booking_id=booking.id) }}" style="display:inline;">
+                        <select name="status" onchange="this.form.submit()">
+                            <option value="pending" {% if booking.status.value == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="confirmed" {% if booking.status.value == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                            <option value="completed" {% if booking.status.value == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="cancelled" {% if booking.status.value == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </form>
+                </td>
+                <td>
+                    <a href="{{ url_for('service_detail', service_id=booking.service_id) }}" class="btn btn-sm btn-text">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

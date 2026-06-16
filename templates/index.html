@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-content">
+        <h1>Find Trusted Local Services in South Africa</h1>
+        <p>QuickScope connects you with skilled professionals for any task – from home repairs to personal services. Get it done locally, safely, and affordably.</p>
+        
+        <div class="search-box">
+            <form action="{{ url_for('services_page') }}" method="GET" class="search-form">
+                <div class="search-input-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" placeholder="What service do you need?" value="{{ request.args.get('q', '') }}">
+                </div>
+                <div class="search-input-group">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" name="location" placeholder="Location (e.g., Johannesburg)" value="{{ request.args.get('location', '') }}">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg">Find Services</button>
+            </form>
+        </div>
+        
+        <div class="hero-stats">
+            <div class="stat animate-on-scroll delay-1">
+                <span class="number">{{ total_services }}</span>
+                <span class="label">Services Listed</span>
+            </div>
+            <div class="stat animate-on-scroll delay-2">
+                <span class="number">{{ total_providers }}</span>
+                <span class="label">Trusted Providers</span>
+            </div>
+            <div class="stat animate-on-scroll delay-3">
+                <span class="number">{{ total_bookings }}</span>
+                <span class="label">Bookings Completed</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="section-header">
+        <h2>Browse Categories</h2>
+        <div class="category-filters">
+            <a href="{{ url_for('index') }}" class="category-chip {{ 'active' if not request.args.get('category') else '' }}">All</a>
+            {% for cat in categories %}
+                <a href="{{ url_for('index', category=cat) }}" class="category-chip {{ 'active' if request.args.get('category') == cat else '' }}">{{ cat }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if services %}
+        <div class="services-grid">
+            {% for service in services %}
+            <div class="service-card animate-on-scroll delay-{{ loop.index0 % 6 + 1 }}">
+                <div class="service-image">
+                    {% if service.image_filename %}
+                        <img src="{{ get_image_url(service.image_filename) }}" alt="{{ service.title }}">
+                    {% else %}
+                        <div class="service-image-placeholder">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                    {% endif %}
+                    <div class="service-badge">{{ service.category }}</div>
+                </div>
+                <div class="service-content">
+                    <h3>{{ service.title }}</h3>
+                    <p class="service-description">{{ service.description[:100] }}{% if service.description|length > 100 %}...{% endif %}</p>
+                    
+                    <div class="service-meta">
+                        <span class="service-location"><i class="fas fa-map-marker-alt"></i> {{ service.location or 'Remote' }}</span>
+                        <span class="service-price">
+                            {% if service.price_type == 'quote' %}
+                                Quote based
+                            {% elif service.price_min and service.price_max %}
+                                {{ currency }} {{ "%.0f"|format(service.price_min) }} - {{ currency }}{{ "%.0f"|format(service.price_max) }}
+                            {% elif service.price_min %}
+                                From {{ currency }}{{ "%.0f"|format(service.price_min) }}
+                            {% else %}
+                                Contact for price
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="service-provider">
+                        {% if service.provider.avatar_url %}
+                            <img src="{{ service.provider.avatar_url }}" alt="" class="provider-avatar">
+                        {% else %}
+                            <div class="provider-avatar-placeholder">{{ service.provider.first_name[0] }}</div>
+                        {% endif %}
+                        <div class="provider-info">
+                            <span class="provider-name">{{ service.provider.full_name }}</span>
+                            <div class="provider-rating">
+                                <i class="fas fa-star"></i>
+                                <span>{{ "%.1f"|format(service.provider.average_rating) }} ({{ service.provider.review_count }})</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('service_detail', service_id=service.id) }}" class="btn btn-outline btn-block">View Details</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <h3>No services found</h3>
+            <p>Try adjusting your search or browse all categories.</p>
+        </div>
+    {% endif %}
+
+    <div class="view-all-container" style="text-align: center; margin-top: 2rem;">
+        <a href="{{ url_for('services_page') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-list"></i> View All Services
+        </a>
+    </div>
+</div>
+
+<div class="how-it-works">
+    <div class="container">
+        <h2>How QuickScope Works</h2>
+        <div class="steps-grid">
+            <div class="step animate-on-scroll delay-1">
+                <div class="step-icon"><i class="fas fa-search"></i></div>
+                <h3>1. Find</h3>
+                <p>Browse services or search for exactly what you need in your area.</p>
+            </div>
+            <div class="step animate-on-scroll delay-2">
+                <div class="step-icon"><i class="fas fa-clipboard-list"></i></div>
+                <h3>2. Request Scope</h3>
+                <p>Describe your task and get a personalized quote from providers.</p>
+            </div>
+            <div class="step animate-on-scroll delay-3">
+                <div class="step-icon"><i class="fas fa-calendar-check"></i></div>
+                <h3>3. Book</h3>
+                <p>Confirm your booking and schedule a time that works for you.</p>
+            </div>
+            <div class="step animate-on-scroll delay-4">
+                <div class="step-icon"><i class="fas fa-star"></i></div>
+                <h3>4. Review</h3>
+                <p>After completion, leave an honest review to help others.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="about-preview">
+    <div class="container">
+        <div class="about-content">
+            <h2>Why QuickScope?</h2>
+            <p>We're a South African platform dedicated to connecting you with reliable local service providers. Whether you need a plumber, electrician, tutor, or cleaner – we make it easy to find, compare, and book trusted professionals.</p>
+            <div class="features-grid">
+                <div class="feature animate-on-scroll delay-1">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Verified Providers</h3>
+                    <p>All providers are reviewed and rated by real customers.</p>
+                </div>
+                <div class="feature animate-on-scroll delay-2">
+                    <i class="fas fa-phone-alt"></i>
+                    <h3>WhatsApp Integration</h3>
+                    <p>Connect directly with providers via WhatsApp for quick communication.</p>
+                </div>
+                <div class="feature animate-on-scroll delay-3">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <h3>Fair Pricing</h3>
+                    <p>Get quotes and compare prices before you book.</p>
+                </div>
+                <div class="feature animate-on-scroll delay-4">
+                    <i class="fas fa-clock"></i>
+                    <h3>Flexible Scheduling</h3>
+                    <p>Book at times that suit you, with real‑time availability.</p>
+                </div>
+            </div>
+            <a href="{{ url_for('about') }}" class="btn btn-primary">Learn More About Us</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

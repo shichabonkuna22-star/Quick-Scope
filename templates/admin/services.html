@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Services{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Manage Services</h1>
+    <table class="admin-table">
+        <thead>
+            <tr><th>ID</th><th>Title</th><th>Provider</th><th>Category</th><th>Active</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for service in services %}
+            <tr>
+                <td>{{ service.id }}</td>
+                <td>{{ service.title }}</td>
+                <td>{{ service.provider.full_name }}</td>
+                <td>{{ service.category }}</td>
+                <td>{{ 'Yes' if service.is_active else 'No' }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin_toggle_service', service_id=service.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-warning">Toggle Active</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin_delete_service', service_id=service.id) }}" onsubmit="return confirm('Delete this service?');" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

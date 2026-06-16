@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}{{ service.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="service-detail">
+        <div class="service-detail-main">
+            <div class="service-detail-image">
+                {% if service.image_filename %}
+                    <img src="{{ get_image_url(service.image_filename) }}" alt="{{ service.title }}">
+                {% else %}
+                    <div class="service-image-placeholder large">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="service-detail-header">
+                <div class="service-badges">
+                    <span class="badge">{{ service.category }}</span>
+                    {% if service.is_active %}
+                        <span class="badge badge-success">Available</span>
+                    {% else %}
+                        <span class="badge badge-secondary">Unavailable</span>
+                    {% endif %}
+                </div>
+                <h1>{{ service.title }}</h1>
+                <div class="service-detail-meta">
+                    <span><i class="fas fa-map-marker-alt"></i> {{ service.location or 'Remote' }}</span>
+                    <span><i class="fas fa-clock"></i> Posted {{ format_date(service.created_at) }}</span>
+                </div>
+            </div>
+            
+            <div class="service-detail-section">
+                <h2>About This Service</h2>
+                <p>{{ service.description }}</p>
+            </div>
+            
+            <div class="service-detail-section">
+                <h2>Pricing</h2>
+                <div class="pricing-info">
+                    {% if service.price_type == 'fixed' and service.price_min %}
+                        <div class="price-tag">
+                            <span class="price-amount">{{ currency }}{{ "%.2f"|format(service.price_min) }}</span>
+                            <span class="price-type">Fixed price</span>
+                        </div>
+                    {% elif service.price_min and service.price_max %}
+                        <div class="price-tag">
+                            <span class="price-amount">{{ currency }}{{ "%.2f"|format(service.price_min) }} - {{ currency }}{{ "%.2f"|format(service.price_max) }}</span>
+                            <span class="price-type">{{ service.price_type }}</span>
+                        </div>
+                    {% else %}
+                        <div class="price-tag quote">
+                            <span class="price-amount">Custom Quote</span>
+                            <span class="price-type">Request a scope for pricing</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if gallery %}
+            <div class="service-detail-section">
+                <h2>Work Gallery</h2>
+                <div class="gallery-grid">
+                    {% for img in gallery %}
+                    <div class="gallery-item">
+                        <img src="{{ get_image_url(img.image_filename) }}" alt="{{ img.caption or 'Work sample' }}">
+                        {% if img.caption %}
+                            <p class="gallery-caption">{{ img.caption }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="service-detail-section">
+                <h2>Reviews ({{ reviews|length }})</h2>
+                {% if reviews %}
+                    <div class="reviews-list">
+                        {% for review in reviews %}
+                        <div class="review-item">
+                            <div class="review-header">
+                                <div class="reviewer">
+                                    {% if review.reviewer.avatar_url %}
+                                        <img src="{{ review.reviewer.avatar_url }}" alt="" class="reviewer-avatar">
+                                    {% else %}
+                                        <div class="reviewer-avatar-placeholder">{{ review.reviewer.first_name[0] }}</div>
+                                    {% endif %}
+                                    <span>{{ review.reviewer.full_name }}</span>
+                                </div>
+                                <div class="review-rating">
+                                    {% for i in range(5) %}
+                                        <i class="fas fa-star {{ 'filled' if i < review.rating else '' }}"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="review-comment">{{ review.comment }}</p>
+                            <span class="review-date">{{ format_date(review.created_at) }}</span>
+                            
+                            {% if review.provider_response %}
+                            <div class="provider-response">
+                                <strong>{{ service.provider.full_name }} (Provider):</strong>
+                                <p>{{ review.provider_response }}</p>
+                                <span class="response-date">Responded on {{ format_date(review.response_date) }}</span>
+                            </div>
+                            {% elif current_user.is_authenticated and current_user.id == service.provider_id %}
+                            <form method="POST" action="{{ url_for('respond_to_review', review_id=review.id) }}" class="response-form">
+                                <textarea name="response_text" rows="2" placeholder="Respond to this review..."></textarea>
+                                <button type="submit" class="btn btn-sm btn-primary">Post Response</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No reviews yet. Be the first to book and review!</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="service-detail-sidebar">
+            <div class="provider-card">
+                <div class="provider-header">
+                    {% if service.provider.avatar_url %}
+                        <img src="{{ service.provider.avatar_url }}" alt="" class="provider-avatar-large">
+                    {% else %}
+                        <div class="provider-avatar-large placeholder">{{ service.provider.first_name[0] }}{{ service.provider.last_name[0] }}</div>
+                    {% endif %}
+                    <div>
+                        <h3>{{ service.provider.full_name }}</h3>
+                        <div class="provider-rating-large">
+                            <i class="fas fa-star"></i>
+                            <span>{{ "%.1f"|format(service.provider.average_rating) }}</span>
+                            <span class="review-count">({{ service.provider.review_count }} reviews)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if service.provider.business_name %}
+                    <p class="provider-business">{{ service.provider.business_name }}</p>
+                {% endif %}
+                
+                <div class="provider-actions">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role.value == 'customer' %}
+                            {% if service.price_type != 'quote' and service.price_min is not none %}
+                                <form method="POST" action="{{ url_for('direct_booking', service_id=service.id) }}" onsubmit="return confirm('Book this service for {{ currency }}{{ "%.2f"|format(service.price_min) }}?');">
+                                    <button type="submit" class="btn btn-primary btn-block btn-lg">
+                                        <i class="fas fa-calendar-check"></i> Book Now - {{ currency }}{{ "%.2f"|format(service.price_min) }}
+                                    </button>
+                                </form>
+                            {% endif %}
+                            
+                            <a href="{{ url_for('request_scope', service_id=service.id) }}" class="btn btn-outline btn-block btn-lg" style="margin-top: 0.5rem;">
+                                <i class="fas fa-clipboard-list"></i> Request a Scope (Custom Quote)
+                            </a>
+                        {% else %}
+                            <p class="text-muted">You are the provider of this service.</p>
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-block btn-lg">Log in to Book</a>
+                    {% endif %}
+                    
+                    {% if whatsapp_link %}
+                        <a href="{{ whatsapp_link }}" target="_blank" class="btn btn-whatsapp btn-block" style="margin-top: 0.5rem;">
+                            <i class="fab fa-whatsapp"></i> Message on WhatsApp
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if current_user.is_authenticated and current_user.id == service.provider_id %}
+                <div class="provider-actions-card">
+                    <h3>Manage Service</h3>
+                    <a href="{{ url_for('edit_service', service_id=service.id) }}" class="btn btn-outline btn-block">
+                        <i class="fas fa-edit"></i> Edit Listing
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -12,7 +12,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import or_
+from sqlalchemy import or_, inspect, text
 
 from config import Config
 from models import db, User, Service, GalleryImage, ScopeRequest, Booking, Review, UserRole, BookingStatus, ScopeStatus
@@ -43,6 +43,23 @@ def create_notification(user_id, type, title, message, link=None):
 def get_admin_user():
     """Return the admin user (by email)."""
     return User.query.filter_by(email='admin@quickscope.com').first()
+
+# ---------- Helper for database schema updates ----------
+def ensure_schema():
+    """Add any missing columns to the bookings table (and others if needed)."""
+    try:
+        inspector = inspect(db.engine)
+        # Check for bookings.started_at
+        columns = [col['name'] for col in inspector.get_columns('bookings')]
+        if 'started_at' not in columns:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE bookings ADD COLUMN started_at TIMESTAMP'))
+                conn.commit()
+                print("✅ Added column started_at to bookings table.")
+        # Add any other missing columns here if needed
+        # e.g., if you later add more columns, add them here with similar checks
+    except Exception as e:
+        print(f"⚠️ Schema update warning: {e}")
 
 # ---------- Helper functions for seeding ----------
 def random_phone():
@@ -268,9 +285,12 @@ def seed_database():
 
         print("🎉 Database seeding complete.")
 
-# ---------- Create tables and seed on startup ----------
+# ---------- Create tables, seed, and ensure schema ----------
 with app.app_context():
     db.create_all()
+    # ✅ Ensure missing columns are added
+    ensure_schema()
+
     admin_email = "admin@quickscope.com"
     admin = User.query.filter_by(email=admin_email).first()
     if not admin:
@@ -480,7 +500,7 @@ def create_service():
         db.session.add(service)
         db.session.commit()
 
-        # ✅ Notify admin about the new service
+        # Notify admin about new service
         admin = get_admin_user()
         if admin:
             create_notification(
@@ -883,7 +903,6 @@ def respond_to_review(review_id):
 def notifications():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
-    # limit per_page to 5,10,15
     if per_page not in [5, 10, 15]:
         per_page = 10
     query = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc())
@@ -915,7 +934,6 @@ def mark_all_notifications_read():
 @app.route('/chat/conversations')
 @login_required
 def chat_conversations():
-    """List all users the current user has chatted with."""
     sent_ids = db.session.query(ChatMessage.receiver_id).filter(ChatMessage.sender_id == current_user.id).distinct().all()
     received_ids = db.session.query(ChatMessage.sender_id).filter(ChatMessage.receiver_id == current_user.id).distinct().all()
     user_ids = set([id[0] for id in sent_ids] + [id[0] for id in received_ids])
@@ -1014,7 +1032,7 @@ def get_chat_messages_ajax():
     } for m in messages]
     return jsonify(data)
 
-# ==================== ADMIN CHAT (unchanged) ====================
+# ==================== ADMIN CHAT ====================
 @app.route('/admin/chat')
 @login_required
 @admin_required

@@ -11,6 +11,8 @@
         <div class="stat-card animate-on-scroll delay-3"><i class="fas fa-calendar-check"></i><div><span class="stat-number">{{ total_bookings }}</span><span class="stat-label">Bookings</span></div></div>
         <div class="stat-card animate-on-scroll delay-4"><i class="fas fa-star"></i><div><span class="stat-number">{{ total_reviews }}</span><span class="stat-label">Reviews</span></div></div>
         <div class="stat-card animate-on-scroll delay-5"><i class="fas fa-clipboard-list"></i><div><span class="stat-number">{{ pending_scopes }}</span><span class="stat-label">Pending Scopes</span></div></div>
+        <!-- Unread chats card -->
+        <div class="stat-card animate-on-scroll delay-6"><i class="fas fa-comment"></i><div><span class="stat-number">{{ unread_chats }}</span><span class="stat-label">Unread Chat Messages</span></div></div>
     </div>
 
     <div class="dashboard-grid">
@@ -39,6 +41,7 @@
         <a href="{{ url_for('admin_services') }}" class="btn btn-primary">Manage Services</a>
         <a href="{{ url_for('admin_bookings') }}" class="btn btn-primary">Manage Bookings</a>
         <a href="{{ url_for('admin_reviews') }}" class="btn btn-primary">Manage Reviews</a>
+        <a href="{{ url_for('admin_chat') }}" class="btn btn-primary">Chat with Users</a>
     </div>
 </div>
 {% endblock %}

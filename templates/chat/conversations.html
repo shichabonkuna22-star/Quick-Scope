@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Chat Conversations{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Your Conversations</h1>
+    {% if conversations %}
+        <div class="conversation-list">
+            {% for conv in conversations %}
+                <a href="{{ url_for('chat_with_user', user_id=conv.user.id) }}" class="conversation-item">
+                    <div class="conv-avatar">
+                        {% if conv.user.avatar_url %}
+                            <img src="{{ conv.user.avatar_url }}" alt="{{ conv.user.full_name }}" class="avatar-small">
+                        {% else %}
+                            <div class="avatar-placeholder">{{ conv.user.first_name[0] }}{{ conv.user.last_name[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="conv-info">
+                        <div class="conv-name">{{ conv.user.full_name }}</div>
+                        <div class="conv-last-msg">
+                            {% if conv.latest %}
+                                {{ conv.latest.message[:50] }}{% if conv.latest.message|length > 50 %}...{% endif %}
+                            {% else %}
+                                No messages yet
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="conv-meta">
+                        {% if conv.unread > 0 %}
+                            <span class="badge badge-danger">{{ conv.unread }}</span>
+                        {% endif %}
+                        <span class="conv-time">{{ format_datetime(conv.latest.created_at) if conv.latest else '' }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">No conversations yet. Start by contacting a provider or customer from a booking.</p>
+    {% endif %}
+</div>
+<style>
+.conversation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 700px;
+    margin: 1rem auto;
+}
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    text-decoration: none;
+    color: var(--dark);
+    border: 1px solid transparent;
+}
+.conversation-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+.conv-avatar .avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.conv-info {
+    flex: 1;
+}
+.conv-name {
+    font-weight: 600;
+}
+.conv-last-msg {
+    font-size: 0.9rem;
+    color: var(--gray);
+}
+.conv-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--gray);
+}
+.conv-meta .badge {
+    background: var(--danger);
+    color: white;
+    padding: 0.1rem 0.5rem;
+    border-radius: 2rem;
+}
+</style>
+{% endblock %}

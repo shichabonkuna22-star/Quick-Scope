@@ -17,6 +17,7 @@ from sqlalchemy import or_
 from config import Config
 from models import db, User, Service, GalleryImage, ScopeRequest, Booking, Review, UserRole, BookingStatus, ScopeStatus
 from models import format_datetime, format_date, get_sast_time
+from models import Notification, ChatMessage
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -25,6 +26,23 @@ app.config.from_object(Config)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
+
+# ---------- Helper for notifications ----------
+def create_notification(user_id, type, title, message, link=None):
+    notif = Notification(
+        user_id=user_id,
+        type=type,
+        title=title,
+        message=message,
+        link=link
+    )
+    db.session.add(notif)
+    db.session.commit()
+    return notif
+
+def get_admin_user():
+    """Return the admin user (by email)."""
+    return User.query.filter_by(email='admin@quickscope.com').first()
 
 # ---------- Helper functions for seeding ----------
 def random_phone():
@@ -37,9 +55,7 @@ def random_date(start, end):
     return start + timedelta(seconds=random_seconds)
 
 def seed_database():
-    """Seed the database with sample data if it's empty."""
     with app.app_context():
-        # Check if any services exist – if yes, skip seeding
         if Service.query.count() > 0:
             print("✅ Database already has services – skipping seed.")
             return
@@ -47,241 +63,71 @@ def seed_database():
         print("🌱 Seeding database with sample data...")
         db.create_all()
 
-        # ---------- Seed Customers ----------
+        # Customers
         customers = [
-            {
-                'first_name': 'Thabo',
-                'last_name': 'Mokoena',
-                'email': 'thabo.m@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'location': 'Johannesburg, Gauteng'
-            },
-            {
-                'first_name': 'Lindiwe',
-                'last_name': 'Nkosi',
-                'email': 'lindiwe.n@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'location': 'Cape Town, Western Cape'
-            },
-            {
-                'first_name': 'Sipho',
-                'last_name': 'Zulu',
-                'email': 'sipho.z@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'location': 'Durban, KwaZulu-Natal'
-            },
-            {
-                'first_name': 'Zanele',
-                'last_name': 'Mthembu',
-                'email': 'zanele.m@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'location': 'Pretoria, Gauteng'
-            },
-            {
-                'first_name': 'Kagiso',
-                'last_name': 'Mabaso',
-                'email': 'kagiso.m@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'location': 'Port Elizabeth, Eastern Cape'
-            }
+            {'first_name': 'Thabo', 'last_name': 'Mokoena', 'email': 'thabo.m@example.com', 'password': 'password123', 'phone': random_phone(), 'location': 'Johannesburg, Gauteng'},
+            {'first_name': 'Lindiwe', 'last_name': 'Nkosi', 'email': 'lindiwe.n@example.com', 'password': 'password123', 'phone': random_phone(), 'location': 'Cape Town, Western Cape'},
+            {'first_name': 'Sipho', 'last_name': 'Zulu', 'email': 'sipho.z@example.com', 'password': 'password123', 'phone': random_phone(), 'location': 'Durban, KwaZulu-Natal'},
+            {'first_name': 'Zanele', 'last_name': 'Mthembu', 'email': 'zanele.m@example.com', 'password': 'password123', 'phone': random_phone(), 'location': 'Pretoria, Gauteng'},
+            {'first_name': 'Kagiso', 'last_name': 'Mabaso', 'email': 'kagiso.m@example.com', 'password': 'password123', 'phone': random_phone(), 'location': 'Port Elizabeth, Eastern Cape'}
         ]
 
-        # ---------- Seed Providers ----------
         providers = [
             {
-                'first_name': 'Nomsa',
-                'last_name': 'Mthembu',
-                'email': 'nomsa.m@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'business_name': 'Clean & Shine Services',
-                'business_description': 'Professional cleaning services for homes and offices. We use eco-friendly products and have a 100% satisfaction guarantee.',
-                'location': 'Johannesburg, Gauteng',
+                'first_name': 'Nomsa', 'last_name': 'Mthembu', 'email': 'nomsa.m@example.com', 'password': 'password123',
+                'phone': random_phone(), 'business_name': 'Clean & Shine Services',
+                'business_description': 'Professional cleaning services...', 'location': 'Johannesburg, Gauteng',
                 'services': [
-                    {
-                        'title': 'Deep House Cleaning',
-                        'category': 'Cleaning',
-                        'description': 'Thorough cleaning of all rooms, including windows, carpets, and appliances. We bring all equipment and supplies.',
-                        'price_min': 450.00,
-                        'price_max': 850.00,
-                        'price_type': 'fixed',
-                        'image_seed': 'clean1'
-                    },
-                    {
-                        'title': 'Office Cleaning (Weekly)',
-                        'category': 'Cleaning',
-                        'description': 'Regular office cleaning for small to medium businesses. Includes dusting, vacuuming, and sanitizing common areas.',
-                        'price_min': 600.00,
-                        'price_max': 1200.00,
-                        'price_type': 'fixed',
-                        'image_seed': 'clean2'
-                    }
+                    {'title': 'Deep House Cleaning', 'category': 'Cleaning', 'description': 'Thorough cleaning...', 'price_min': 450, 'price_max': 850, 'price_type': 'fixed', 'image_seed': 'clean1'},
+                    {'title': 'Office Cleaning (Weekly)', 'category': 'Cleaning', 'description': 'Regular office cleaning...', 'price_min': 600, 'price_max': 1200, 'price_type': 'fixed', 'image_seed': 'clean2'}
                 ],
-                'gallery': [
-                    {'caption': 'After a deep clean', 'seed': 'gallery1'},
-                    {'caption': 'Kitchen sparkling clean', 'seed': 'gallery2'},
-                    {'caption': 'Office refresh', 'seed': 'gallery3'}
-                ]
+                'gallery': [{'caption': 'After a deep clean', 'seed': 'gallery1'}, {'caption': 'Kitchen sparkling clean', 'seed': 'gallery2'}, {'caption': 'Office refresh', 'seed': 'gallery3'}]
             },
             {
-                'first_name': 'Bongani',
-                'last_name': 'Mkhize',
-                'email': 'bongani.m@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'business_name': 'Handyman Bongani',
-                'business_description': 'Reliable handyman services for all your home repair needs. Plumbing, electrical, carpentry, and general maintenance.',
-                'location': 'Cape Town, Western Cape',
+                'first_name': 'Bongani', 'last_name': 'Mkhize', 'email': 'bongani.m@example.com', 'password': 'password123',
+                'phone': random_phone(), 'business_name': 'Handyman Bongani',
+                'business_description': 'Reliable handyman services...', 'location': 'Cape Town, Western Cape',
                 'services': [
-                    {
-                        'title': 'Plumbing Repairs',
-                        'category': 'Repairs',
-                        'description': 'Fix leaks, unblock drains, repair taps and toilets. Fast response and quality workmanship.',
-                        'price_min': 350.00,
-                        'price_max': 800.00,
-                        'price_type': 'quote',
-                        'image_seed': 'plumb1'
-                    },
-                    {
-                        'title': 'Electrical Fixes',
-                        'category': 'Repairs',
-                        'description': 'Install lights, replace switches, fix faulty wiring. Certified electrician with 10 years experience.',
-                        'price_min': 400.00,
-                        'price_max': 900.00,
-                        'price_type': 'quote',
-                        'image_seed': 'elec1'
-                    },
-                    {
-                        'title': 'General Handyman',
-                        'category': 'Repairs',
-                        'description': 'Painting, drywall repair, door fixes, furniture assembly, and more. Call for any small job.',
-                        'price_min': 300.00,
-                        'price_max': 700.00,
-                        'price_type': 'hourly',
-                        'image_seed': 'handy1'
-                    }
+                    {'title': 'Plumbing Repairs', 'category': 'Repairs', 'description': 'Fix leaks...', 'price_min': 350, 'price_max': 800, 'price_type': 'quote', 'image_seed': 'plumb1'},
+                    {'title': 'Electrical Fixes', 'category': 'Repairs', 'description': 'Install lights...', 'price_min': 400, 'price_max': 900, 'price_type': 'quote', 'image_seed': 'elec1'},
+                    {'title': 'General Handyman', 'category': 'Repairs', 'description': 'Painting...', 'price_min': 300, 'price_max': 700, 'price_type': 'hourly', 'image_seed': 'handy1'}
                 ],
-                'gallery': [
-                    {'caption': 'New bathroom faucet', 'seed': 'gallery4'},
-                    {'caption': 'Rewired kitchen', 'seed': 'gallery5'},
-                    {'caption': 'Painted living room', 'seed': 'gallery6'}
-                ]
+                'gallery': [{'caption': 'New bathroom faucet', 'seed': 'gallery4'}, {'caption': 'Rewired kitchen', 'seed': 'gallery5'}, {'caption': 'Painted living room', 'seed': 'gallery6'}]
             },
             {
-                'first_name': 'Precious',
-                'last_name': 'Singh',
-                'email': 'precious.s@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'business_name': 'Green Thumb Gardening',
-                'business_description': 'Professional gardening and landscaping services. We transform your outdoor spaces into beautiful, low-maintenance gardens.',
-                'location': 'Durban, KwaZulu-Natal',
+                'first_name': 'Precious', 'last_name': 'Singh', 'email': 'precious.s@example.com', 'password': 'password123',
+                'phone': random_phone(), 'business_name': 'Green Thumb Gardening',
+                'business_description': 'Professional gardening...', 'location': 'Durban, KwaZulu-Natal',
                 'services': [
-                    {
-                        'title': 'Garden Design & Installation',
-                        'category': 'Gardening',
-                        'description': 'Full garden design service including planting, paving, and irrigation systems. We create sustainable, water-wise gardens.',
-                        'price_min': 1500.00,
-                        'price_max': 5000.00,
-                        'price_type': 'quote',
-                        'image_seed': 'garden1'
-                    },
-                    {
-                        'title': 'Lawn Maintenance',
-                        'category': 'Gardening',
-                        'description': 'Weekly or bi‑weekly lawn mowing, edging, and weeding. Keep your lawn looking pristine all year round.',
-                        'price_min': 250.00,
-                        'price_max': 450.00,
-                        'price_type': 'fixed',
-                        'image_seed': 'garden2'
-                    }
+                    {'title': 'Garden Design & Installation', 'category': 'Gardening', 'description': 'Full garden design...', 'price_min': 1500, 'price_max': 5000, 'price_type': 'quote', 'image_seed': 'garden1'},
+                    {'title': 'Lawn Maintenance', 'category': 'Gardening', 'description': 'Weekly or bi‑weekly lawn mowing...', 'price_min': 250, 'price_max': 450, 'price_type': 'fixed', 'image_seed': 'garden2'}
                 ],
-                'gallery': [
-                    {'caption': 'New garden installation', 'seed': 'gallery7'},
-                    {'caption': 'Before and after', 'seed': 'gallery8'},
-                    {'caption': 'Irrigation system', 'seed': 'gallery9'}
-                ]
+                'gallery': [{'caption': 'New garden installation', 'seed': 'gallery7'}, {'caption': 'Before and after', 'seed': 'gallery8'}, {'caption': 'Irrigation system', 'seed': 'gallery9'}]
             },
             {
-                'first_name': 'Ayanda',
-                'last_name': 'Naidoo',
-                'email': 'ayanda.n@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'business_name': 'Ayanda Tutoring',
-                'business_description': 'Experienced tutor for mathematics, science, and English. Personalized lessons to help students excel.',
-                'location': 'Pretoria, Gauteng',
+                'first_name': 'Ayanda', 'last_name': 'Naidoo', 'email': 'ayanda.n@example.com', 'password': 'password123',
+                'phone': random_phone(), 'business_name': 'Ayanda Tutoring',
+                'business_description': 'Experienced tutor...', 'location': 'Pretoria, Gauteng',
                 'services': [
-                    {
-                        'title': 'Mathematics Tutoring (Grades 8-12)',
-                        'category': 'Tutoring',
-                        'description': 'One-on-one tutoring focusing on problem-solving and exam preparation. Proven track record of improving grades.',
-                        'price_min': 200.00,
-                        'price_max': 350.00,
-                        'price_type': 'hourly',
-                        'image_seed': 'math1'
-                    },
-                    {
-                        'title': 'English & Literature',
-                        'category': 'Tutoring',
-                        'description': 'Help with reading comprehension, essay writing, and literature analysis. Suitable for all ages.',
-                        'price_min': 180.00,
-                        'price_max': 300.00,
-                        'price_type': 'hourly',
-                        'image_seed': 'eng1'
-                    }
+                    {'title': 'Mathematics Tutoring (Grades 8-12)', 'category': 'Tutoring', 'description': 'One-on-one tutoring...', 'price_min': 200, 'price_max': 350, 'price_type': 'hourly', 'image_seed': 'math1'},
+                    {'title': 'English & Literature', 'category': 'Tutoring', 'description': 'Help with reading...', 'price_min': 180, 'price_max': 300, 'price_type': 'hourly', 'image_seed': 'eng1'}
                 ],
-                'gallery': [
-                    {'caption': 'Lesson in progress', 'seed': 'gallery10'},
-                    {'caption': 'Student resources', 'seed': 'gallery11'}
-                ]
+                'gallery': [{'caption': 'Lesson in progress', 'seed': 'gallery10'}, {'caption': 'Student resources', 'seed': 'gallery11'}]
             },
             {
-                'first_name': 'Sibusiso',
-                'last_name': 'Mthethwa',
-                'email': 'sibusiso.m@example.com',
-                'password': 'password123',
-                'phone': random_phone(),
-                'business_name': 'Sibusiso Photography',
-                'business_description': 'Professional photography for weddings, events, portraits, and commercial shoots. We capture moments that last a lifetime.',
-                'location': 'Johannesburg, Gauteng',
+                'first_name': 'Sibusiso', 'last_name': 'Mthethwa', 'email': 'sibusiso.m@example.com', 'password': 'password123',
+                'phone': random_phone(), 'business_name': 'Sibusiso Photography',
+                'business_description': 'Professional photography...', 'location': 'Johannesburg, Gauteng',
                 'services': [
-                    {
-                        'title': 'Wedding Photography',
-                        'category': 'Photography',
-                        'description': 'Full-day coverage of your wedding with a second shooter. Includes digital gallery and print rights.',
-                        'price_min': 5000.00,
-                        'price_max': 12000.00,
-                        'price_type': 'quote',
-                        'image_seed': 'wedding1'
-                    },
-                    {
-                        'title': 'Portrait Sessions',
-                        'category': 'Photography',
-                        'description': 'Personal or family portraits in studio or on location. Perfect for special occasions or professional headshots.',
-                        'price_min': 800.00,
-                        'price_max': 1800.00,
-                        'price_type': 'fixed',
-                        'image_seed': 'portrait1'
-                    }
+                    {'title': 'Wedding Photography', 'category': 'Photography', 'description': 'Full-day coverage...', 'price_min': 5000, 'price_max': 12000, 'price_type': 'quote', 'image_seed': 'wedding1'},
+                    {'title': 'Portrait Sessions', 'category': 'Photography', 'description': 'Personal or family portraits...', 'price_min': 800, 'price_max': 1800, 'price_type': 'fixed', 'image_seed': 'portrait1'}
                 ],
-                'gallery': [
-                    {'caption': 'Wedding couple', 'seed': 'gallery12'},
-                    {'caption': 'Family portrait', 'seed': 'gallery13'},
-                    {'caption': 'Event coverage', 'seed': 'gallery14'}
-                ]
+                'gallery': [{'caption': 'Wedding couple', 'seed': 'gallery12'}, {'caption': 'Family portrait', 'seed': 'gallery13'}, {'caption': 'Event coverage', 'seed': 'gallery14'}]
             }
         ]
 
-        # ----- Create customers -----
         for cust in customers:
-            existing = User.query.filter_by(email=cust['email']).first()
-            if not existing:
+            if not User.query.filter_by(email=cust['email']).first():
                 user = User(
                     email=cust['email'],
                     password_hash=generate_password_hash(cust['password']),
@@ -290,14 +136,11 @@ def seed_database():
                     phone=cust['phone'],
                     location=cust['location'],
                     role=UserRole.CUSTOMER,
-                    is_oauth=False,
-                    avatar_url=f"https://i.pravatar.cc/150?img={random.randint(1, 70)}"
+                    avatar_url=f"https://i.pravatar.cc/150?img={random.randint(1,70)}"
                 )
                 db.session.add(user)
         db.session.commit()
-        print("✅ Customers seeded.")
 
-        # ----- Create providers, services, gallery -----
         for prov in providers:
             user = User.query.filter_by(email=prov['email']).first()
             if not user:
@@ -311,16 +154,13 @@ def seed_database():
                     business_description=prov['business_description'],
                     location=prov['location'],
                     role=UserRole.PROVIDER,
-                    is_oauth=False,
-                    avatar_url=f"https://i.pravatar.cc/150?img={random.randint(1, 70)}"
+                    avatar_url=f"https://i.pravatar.cc/150?img={random.randint(1,70)}"
                 )
                 db.session.add(user)
-                db.session.commit()  # flush to get user.id
+                db.session.commit()
 
-            # Create services
             for svc in prov['services']:
-                existing = Service.query.filter_by(provider_id=user.id, title=svc['title']).first()
-                if not existing:
+                if not Service.query.filter_by(provider_id=user.id, title=svc['title']).first():
                     service = Service(
                         provider_id=user.id,
                         title=svc['title'],
@@ -335,10 +175,8 @@ def seed_database():
                     )
                     db.session.add(service)
 
-            # Gallery
             for img in prov['gallery']:
-                existing = GalleryImage.query.filter_by(provider_id=user.id, caption=img['caption']).first()
-                if not existing:
+                if not GalleryImage.query.filter_by(provider_id=user.id, caption=img['caption']).first():
                     gallery_img = GalleryImage(
                         provider_id=user.id,
                         image_filename=f"https://picsum.photos/seed/{img['seed']}/400/300",
@@ -347,47 +185,41 @@ def seed_database():
                     db.session.add(gallery_img)
 
         db.session.commit()
-        print("✅ Providers, services, and gallery seeded.")
 
-        # ----- Create bookings and scope requests -----
+        # Bookings & scopes
         all_customers = User.query.filter_by(role=UserRole.CUSTOMER).all()
         all_providers = User.query.filter_by(role=UserRole.PROVIDER).all()
         all_services = Service.query.all()
 
-        if not all_services:
-            print("⚠️ No services found – skipping bookings.")
-        else:
+        if all_services:
             for customer in all_customers:
-                existing_bookings = Booking.query.filter_by(customer_id=customer.id).count()
-                if existing_bookings < 3:
-                    num_to_add = random.randint(1, 2)
-                    for _ in range(num_to_add):
+                if Booking.query.filter_by(customer_id=customer.id).count() < 3:
+                    for _ in range(random.randint(1,2)):
                         provider = random.choice(all_providers)
                         provider_services = [s for s in all_services if s.provider_id == provider.id]
                         if not provider_services:
                             continue
                         service = random.choice(provider_services)
                         status = random.choices(
-                            [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED],
-                            weights=[0.3, 0.3, 0.3, 0.1],
-                            k=1
+                            [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED, BookingStatus.CANCELLED],
+                            weights=[0.2, 0.2, 0.2, 0.3, 0.1], k=1
                         )[0]
-                        base_price = service.price_min or 300
-                        agreed = round(base_price * random.uniform(0.9, 1.3), 2)
                         created = random_date(datetime.now() - timedelta(days=90), datetime.now())
-                        scheduled = created + timedelta(days=random.randint(1, 10))
+                        confirmed_at = created + timedelta(days=1) if status in [BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED] else None
+                        started_at = created + timedelta(days=2) if status in [BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED] else None
+                        completed_at = created + timedelta(days=5) if status == BookingStatus.COMPLETED else None
                         booking = Booking(
                             customer_id=customer.id,
                             provider_id=provider.id,
                             service_id=service.id,
-                            scheduled_date=scheduled,
-                            address=random.choice([customer.location, "123 Main St, " + customer.location.split(',')[0]]),
-                            notes=random.choice(["Please bring your own equipment.", "Call me before coming.", "I'll be home all day."]),
-                            agreed_price=agreed,
+                            scheduled_date=created + timedelta(days=random.randint(1,10)),
+                            address=customer.location,
+                            agreed_price=service.price_min or 300,
                             status=status,
                             created_at=created,
-                            confirmed_at=created + timedelta(days=1) if status in [BookingStatus.CONFIRMED, BookingStatus.COMPLETED] else None,
-                            completed_at=created + timedelta(days=5) if status == BookingStatus.COMPLETED else None,
+                            confirmed_at=confirmed_at,
+                            started_at=started_at,
+                            completed_at=completed_at,
                             cancelled_at=created + timedelta(days=1) if status == BookingStatus.CANCELLED else None,
                             cancellation_reason="Changed my mind" if status == BookingStatus.CANCELLED else None
                         )
@@ -405,68 +237,43 @@ def seed_database():
                         customer_id=customer.id,
                         provider_id=provider.id,
                         service_id=service.id,
-                        description=f"I need help with {service.title.lower()}. Can you provide a quote? I need it done within the next two weeks.",
+                        description=f"I need help with {service.title.lower()}. Can you provide a quote?",
                         location=customer.location,
-                        preferred_date=datetime.now() + timedelta(days=random.randint(3, 10)),
+                        preferred_date=datetime.now() + timedelta(days=random.randint(3,10)),
                         status=random.choice([ScopeStatus.REQUESTED, ScopeStatus.RESPONDED, ScopeStatus.ACCEPTED]),
-                        estimated_cost=random.choice([None, round(random.uniform(300, 1200), 2)]),
-                        estimated_hours=random.choice([None, round(random.uniform(1, 8), 1)]),
+                        estimated_cost=random.choice([None, round(random.uniform(300,1200),2)]),
+                        estimated_hours=random.choice([None, round(random.uniform(1,8),1)]),
                         response_message=random.choice([None, "Sure, I can do that. Here's my estimate."]),
-                        responded_at=datetime.now() - timedelta(days=random.randint(1, 5)) if random.choice([True, False]) else None,
-                        created_at=datetime.now() - timedelta(days=random.randint(1, 15))
+                        responded_at=datetime.now() - timedelta(days=random.randint(1,5)) if random.choice([True,False]) else None,
+                        created_at=datetime.now() - timedelta(days=random.randint(1,15))
                     )
                     db.session.add(scope)
 
             db.session.commit()
-            print("✅ Bookings and scope requests seeded.")
 
-            # ----- Reviews -----
-            completed_bookings = Booking.query.filter_by(status=BookingStatus.COMPLETED).all()
-            for booking in completed_bookings:
-                existing_review = Review.query.filter_by(booking_id=booking.id).first()
-                if existing_review:
-                    continue
-                if random.random() < 0.7:
-                    rating = random.randint(3, 5)
-                    comment = random.choice([
-                        "Excellent service! Very professional and efficient.",
-                        "Great job, highly recommend.",
-                        "Good quality, would book again.",
-                        "Satisfied with the work.",
-                        "Amazing experience, went above and beyond.",
-                        "Quick response and good communication."
-                    ])
+            # Reviews
+            for booking in Booking.query.filter_by(status=BookingStatus.COMPLETED).all():
+                if not booking.review and random.random() < 0.7:
                     review = Review(
                         booking_id=booking.id,
                         customer_id=booking.customer_id,
                         provider_id=booking.provider_id,
                         service_id=booking.service_id,
-                        rating=rating,
-                        comment=comment,
-                        created_at=booking.completed_at + timedelta(days=random.randint(1, 3))
+                        rating=random.randint(3,5),
+                        comment=random.choice(["Excellent service!", "Great job!", "Good quality.", "Satisfied.", "Amazing experience."]),
+                        created_at=booking.completed_at + timedelta(days=random.randint(1,3))
                     )
                     db.session.add(review)
-                    if random.random() < 0.5:
-                        review.provider_response = random.choice([
-                            "Thank you for your kind review!",
-                            "We appreciate your feedback.",
-                            "Glad you were happy with the service.",
-                            "It was a pleasure working with you.",
-                            "Thank you, we hope to serve you again."
-                        ])
-                        review.response_date = review.created_at + timedelta(days=random.randint(1, 2))
-
             db.session.commit()
-            print("✅ Reviews seeded.")
 
         print("🎉 Database seeding complete.")
 
 # ---------- Create tables and seed on startup ----------
 with app.app_context():
     db.create_all()
-    # Create admin user if it doesn't exist
     admin_email = "admin@quickscope.com"
-    if not User.query.filter_by(email=admin_email).first():
+    admin = User.query.filter_by(email=admin_email).first()
+    if not admin:
         admin = User(
             email=admin_email,
             password_hash=generate_password_hash("admin123"),
@@ -478,9 +285,13 @@ with app.app_context():
         db.session.commit()
         print("Default admin created: admin@quickscope.com / admin123")
     else:
-        print("Admin user already exists.")
+        # ✅ Force the role to ADMIN in case it was wrong
+        if admin.role != UserRole.ADMIN:
+            admin.role = UserRole.ADMIN
+            db.session.commit()
+            print("Admin role updated to ADMIN.")
+        print("Admin user already exists (role confirmed).")
 
-    # Seed the database with sample data if no services exist
     seed_database()
 
 # ---------- Flask extensions ----------
@@ -528,7 +339,6 @@ def customer_required(f):
     return decorated_function
 
 def get_image_url(filename):
-    """Return the correct URL for an image, handling both local and external URLs."""
     if not filename:
         return None
     if filename.startswith(('http://', 'https://')):
@@ -538,12 +348,19 @@ def get_image_url(filename):
 @app.context_processor
 def inject_globals():
     categories = db.session.query(Service.category).distinct().all()
+    unread_count = 0
+    chat_unread = 0
+    if current_user.is_authenticated:
+        unread_count = current_user.unread_notification_count
+        chat_unread = ChatMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count()
     return dict(
         categories=[c[0] for c in categories if c[0]],
         currency=app.config['CURRENCY'],
         format_datetime=format_datetime,
         format_date=format_date,
-        get_image_url=get_image_url
+        get_image_url=get_image_url,
+        unread_notifications=unread_count,
+        chat_unread=chat_unread
     )
 
 # ==================== PUBLIC ROUTES ====================
@@ -565,7 +382,6 @@ def index():
             )
         )
     services = query.order_by(Service.created_at.desc()).all()
-    # If no filters, show only 3 random services
     if not (category or location or search):
         if len(services) > 3:
             services = random.sample(services, 3)
@@ -579,14 +395,11 @@ def index():
 
 @app.route('/services')
 def services_page():
-    # Get query parameters
     category = request.args.get('category')
     location = request.args.get('location')
     search = request.args.get('q')
     page = request.args.get('page', 1, type=int)
     per_page = 6
-
-    # Build query
     query = Service.query.filter_by(is_active=True)
     if category:
         query = query.filter_by(category=category)
@@ -599,18 +412,12 @@ def services_page():
                 Service.description.ilike(f'%{search}%')
             )
         )
-
-    # Paginate
     paginated = query.order_by(Service.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
     services = paginated.items
-    total = paginated.total
-
-    # Get categories for filter dropdown
     categories = db.session.query(Service.category).distinct().all()
     categories = [c[0] for c in categories if c[0]]
-
     return render_template('services.html',
                            services=services,
                            pagination=paginated,
@@ -672,6 +479,18 @@ def create_service():
         )
         db.session.add(service)
         db.session.commit()
+
+        # ✅ Notify admin about the new service
+        admin = get_admin_user()
+        if admin:
+            create_notification(
+                user_id=admin.id,
+                type='new_service_listed',
+                title='New Service Listed',
+                message=f'{current_user.full_name} listed a new service: "{service.title}"',
+                link=url_for('admin_services')
+            )
+
         flash('Service listed successfully!', 'success')
         return redirect(url_for('provider_dashboard'))
     return render_template('create_service.html')
@@ -751,7 +570,6 @@ def delete_gallery_image(image_id):
     if image.provider_id != current_user.id:
         flash('Unauthorized.', 'error')
         return redirect(url_for('manage_gallery'))
-    # Only delete local files
     if not image.image_filename.startswith(('http://', 'https://')):
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], image.image_filename)
         if os.path.exists(file_path):
@@ -784,6 +602,14 @@ def request_scope(service_id):
         )
         db.session.add(scope)
         db.session.commit()
+        # Notify provider
+        create_notification(
+            user_id=service.provider_id,
+            type='scope_requested',
+            title='New Scope Request',
+            message=f'{current_user.full_name} requested a scope for "{service.title}".',
+            link=url_for('my_bookings')
+        )
         flash('Scope request sent! The provider will respond soon.', 'success')
         return redirect(url_for('my_bookings'))
     return render_template('scope_request.html', service=service)
@@ -801,6 +627,14 @@ def respond_scope(scope_id):
     scope.status = ScopeStatus.RESPONDED
     scope.responded_at = datetime.utcnow()
     db.session.commit()
+    # Notify customer
+    create_notification(
+        user_id=scope.customer_id,
+        type='scope_responded',
+        title='Scope Response',
+        message=f'{current_user.full_name} responded to your scope request for "{scope.service.title}".',
+        link=url_for('my_bookings')
+    )
     flash('Response sent to customer!', 'success')
     return redirect(url_for('provider_dashboard'))
 
@@ -825,6 +659,14 @@ def accept_scope(scope_id):
     )
     db.session.add(booking)
     db.session.commit()
+    # Notify provider about new booking
+    create_notification(
+        user_id=scope.provider_id,
+        type='booking_created',
+        title='New Booking',
+        message=f'{current_user.full_name} accepted your scope and created a booking for "{scope.service.title}".',
+        link=url_for('my_bookings')
+    )
     flash('Scope accepted and booking created!', 'success')
     return redirect(url_for('my_bookings'))
 
@@ -832,40 +674,125 @@ def accept_scope(scope_id):
 @app.route('/bookings')
 @login_required
 def my_bookings():
+    # Pagination settings for bookings
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    if per_page not in [5, 10, 15]:
+        per_page = 10
+
+    # Pagination settings for scope requests (separate)
+    scope_page = request.args.get('scope_page', 1, type=int)
+    scope_per_page = request.args.get('scope_per_page', 10, type=int)
+    if scope_per_page not in [5, 10, 15]:
+        scope_per_page = 10
+
     if current_user.role == UserRole.CUSTOMER:
-        bookings = Booking.query.filter_by(customer_id=current_user.id).order_by(Booking.created_at.desc()).all()
-        scopes = ScopeRequest.query.filter_by(customer_id=current_user.id).order_by(ScopeRequest.created_at.desc()).all()
+        # Bookings
+        bookings_query = Booking.query.filter_by(customer_id=current_user.id).order_by(Booking.created_at.desc())
+        bookings_pagination = bookings_query.paginate(page=page, per_page=per_page, error_out=False)
+        bookings = bookings_pagination.items
+
+        # Scope requests
+        scopes_query = ScopeRequest.query.filter_by(customer_id=current_user.id).order_by(ScopeRequest.created_at.desc())
+        scopes_pagination = scopes_query.paginate(page=scope_page, per_page=scope_per_page, error_out=False)
+        scopes = scopes_pagination.items
     else:
-        bookings = Booking.query.filter_by(provider_id=current_user.id).order_by(Booking.created_at.desc()).all()
-        scopes = ScopeRequest.query.filter_by(provider_id=current_user.id).order_by(ScopeRequest.created_at.desc()).all()
-    return render_template('bookings.html', bookings=bookings, scopes=scopes)
+        # Provider
+        bookings_query = Booking.query.filter_by(provider_id=current_user.id).order_by(Booking.created_at.desc())
+        bookings_pagination = bookings_query.paginate(page=page, per_page=per_page, error_out=False)
+        bookings = bookings_pagination.items
+
+        scopes_query = ScopeRequest.query.filter_by(provider_id=current_user.id).order_by(ScopeRequest.created_at.desc())
+        scopes_pagination = scopes_query.paginate(page=scope_page, per_page=scope_per_page, error_out=False)
+        scopes = scopes_pagination.items
+
+    return render_template('bookings.html',
+                           bookings=bookings,
+                           bookings_pagination=bookings_pagination,
+                           scopes=scopes,
+                           scopes_pagination=scopes_pagination,
+                           per_page=per_page,
+                           scope_per_page=scope_per_page)
 
 @app.route('/booking/<int:booking_id>/status', methods=['POST'])
 @login_required
 def update_booking_status(booking_id):
     booking = Booking.query.get_or_404(booking_id)
-    new_status = request.form['status']
+    action = request.form.get('action')  # 'confirm', 'start', 'complete', 'cancel'
     if current_user.role == UserRole.CUSTOMER and booking.customer_id != current_user.id:
         return jsonify({'error': 'Unauthorized'}), 403
     if current_user.role == UserRole.PROVIDER and booking.provider_id != current_user.id:
         return jsonify({'error': 'Unauthorized'}), 403
 
-    if new_status == 'confirmed' and current_user.role == UserRole.PROVIDER:
+    if action == 'confirm' and current_user.role == UserRole.PROVIDER:
         booking.status = BookingStatus.CONFIRMED
         booking.confirmed_at = datetime.utcnow()
-    elif new_status == 'completed' and current_user.role == UserRole.PROVIDER:
+        create_notification(
+            user_id=booking.customer_id,
+            type='booking_confirmed',
+            title='Booking Confirmed',
+            message=f'Your booking for "{booking.service.title}" has been confirmed by {current_user.full_name}.',
+            link=url_for('my_bookings')
+        )
+        create_notification(
+            user_id=booking.provider_id,
+            type='booking_confirmed',
+            title='Booking Confirmed',
+            message=f'You confirmed booking for "{booking.service.title}" with {booking.customer.full_name}.',
+            link=url_for('my_bookings')
+        )
+    elif action == 'start' and current_user.role == UserRole.PROVIDER:
+        booking.status = BookingStatus.IN_PROGRESS
+        booking.started_at = datetime.utcnow()
+        create_notification(
+            user_id=booking.customer_id,
+            type='booking_started',
+            title='Work Started',
+            message=f'{current_user.full_name} has started working on "{booking.service.title}".',
+            link=url_for('my_bookings')
+        )
+    elif action == 'complete' and current_user.role == UserRole.PROVIDER:
         booking.status = BookingStatus.COMPLETED
         booking.completed_at = datetime.utcnow()
-    elif new_status == 'cancelled':
+        create_notification(
+            user_id=booking.customer_id,
+            type='booking_completed',
+            title='Job Completed',
+            message=f'Your service "{booking.service.title}" has been marked as complete. Please leave a review!',
+            link=url_for('my_bookings')
+        )
+        create_notification(
+            user_id=booking.provider_id,
+            type='booking_completed',
+            title='Job Completed',
+            message=f'You marked "{booking.service.title}" as complete.',
+            link=url_for('my_bookings')
+        )
+    elif action == 'cancel':
         booking.status = BookingStatus.CANCELLED
         booking.cancelled_at = datetime.utcnow()
         booking.cancellation_reason = request.form.get('reason', '')
+        other_id = booking.provider_id if current_user.id == booking.customer_id else booking.customer_id
+        create_notification(
+            user_id=other_id,
+            type='booking_cancelled',
+            title='Booking Cancelled',
+            message=f'Your booking for "{booking.service.title}" has been cancelled by {current_user.full_name}. Reason: {booking.cancellation_reason}',
+            link=url_for('my_bookings')
+        )
+        create_notification(
+            user_id=current_user.id,
+            type='booking_cancelled',
+            title='Booking Cancelled',
+            message=f'You cancelled booking for "{booking.service.title}".',
+            link=url_for('my_bookings')
+        )
     else:
-        flash('Invalid status update.', 'error')
+        flash('Invalid action.', 'error')
         return redirect(url_for('my_bookings'))
 
     db.session.commit()
-    flash(f'Booking {new_status}!', 'success')
+    flash(f'Booking {action}d!', 'success')
     return redirect(url_for('my_bookings'))
 
 # ==================== DIRECT BOOKING ====================
@@ -889,6 +816,14 @@ def direct_booking(service_id):
     )
     db.session.add(booking)
     db.session.commit()
+    # Notify provider
+    create_notification(
+        user_id=service.provider_id,
+        type='booking_created',
+        title='New Booking',
+        message=f'{current_user.full_name} booked your service "{service.title}".',
+        link=url_for('my_bookings')
+    )
     flash(f'Booking created for "{service.title}". The provider will confirm your booking soon.', 'success')
     return redirect(url_for('my_bookings'))
 
@@ -941,6 +876,222 @@ def respond_to_review(review_id):
     else:
         flash('Response cannot be empty.', 'error')
     return redirect(url_for('service_detail', service_id=review.service_id))
+
+# ==================== NOTIFICATIONS (with pagination) ====================
+@app.route('/notifications')
+@login_required
+def notifications():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    # limit per_page to 5,10,15
+    if per_page not in [5, 10, 15]:
+        per_page = 10
+    query = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc())
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    notifications = paginated.items
+    return render_template('notifications.html', 
+                           notifications=notifications,
+                           pagination=paginated,
+                           per_page=per_page)
+
+@app.route('/notification/<int:notification_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    notif = Notification.query.get_or_404(notification_id)
+    if notif.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    notif.read = True
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/notification/mark-all-read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    Notification.query.filter_by(user_id=current_user.id, read=False).update({'read': True})
+    db.session.commit()
+    return jsonify({'success': True})
+
+# ==================== CHAT (Provider-Customer & Admin) ====================
+@app.route('/chat/conversations')
+@login_required
+def chat_conversations():
+    """List all users the current user has chatted with."""
+    sent_ids = db.session.query(ChatMessage.receiver_id).filter(ChatMessage.sender_id == current_user.id).distinct().all()
+    received_ids = db.session.query(ChatMessage.sender_id).filter(ChatMessage.receiver_id == current_user.id).distinct().all()
+    user_ids = set([id[0] for id in sent_ids] + [id[0] for id in received_ids])
+    if current_user.id in user_ids:
+        user_ids.remove(current_user.id)
+    users = User.query.filter(User.id.in_(user_ids)).all()
+    conversation_data = []
+    for user in users:
+        latest = ChatMessage.query.filter(
+            ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == user.id)) |
+            ((ChatMessage.sender_id == user.id) & (ChatMessage.receiver_id == current_user.id))
+        ).order_by(ChatMessage.created_at.desc()).first()
+        unread = ChatMessage.query.filter(
+            ChatMessage.sender_id == user.id,
+            ChatMessage.receiver_id == current_user.id,
+            ChatMessage.is_read == False
+        ).count()
+        conversation_data.append({
+            'user': user,
+            'latest': latest,
+            'unread': unread
+        })
+    conversation_data.sort(key=lambda x: x['latest'].created_at if x['latest'] else datetime.min, reverse=True)
+    return render_template('chat/conversations.html', conversations=conversation_data)
+
+@app.route('/contact-admin')
+@login_required
+def contact_admin():
+    admin = get_admin_user()
+    if not admin:
+        flash('Admin not found. Please contact support.', 'error')
+        return redirect(url_for('index'))
+    return redirect(url_for('chat_with_user', user_id=admin.id))
+
+@app.route('/chat/user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def chat_with_user(user_id):
+    other_user = User.query.get_or_404(user_id)
+    if other_user.id == current_user.id:
+        flash('You cannot chat with yourself.', 'error')
+        return redirect(url_for('chat_conversations'))
+
+    if request.method == 'POST':
+        message = request.form.get('message', '').strip()
+        if message:
+            chat_msg = ChatMessage(
+                sender_id=current_user.id,
+                receiver_id=other_user.id,
+                message=message
+            )
+            db.session.add(chat_msg)
+            db.session.commit()
+            create_notification(
+                user_id=other_user.id,
+                type='chat_message',
+                title=f'New message from {current_user.full_name}',
+                message=message[:200],
+                link=url_for('chat_with_user', user_id=current_user.id)
+            )
+            flash('Message sent.', 'success')
+        return redirect(url_for('chat_with_user', user_id=other_user.id))
+
+    messages = ChatMessage.query.filter(
+        ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == other_user.id)) |
+        ((ChatMessage.sender_id == other_user.id) & (ChatMessage.receiver_id == current_user.id))
+    ).order_by(ChatMessage.created_at.asc()).all()
+    for msg in messages:
+        if msg.sender_id == other_user.id and not msg.is_read:
+            msg.is_read = True
+    db.session.commit()
+    return render_template('chat/chat_user.html', other_user=other_user, messages=messages)
+
+@app.route('/chat/messages')
+@login_required
+def get_chat_messages_ajax():
+    other_id = request.args.get('user_id', type=int)
+    last_id = request.args.get('last_id', 0, type=int)
+    if not other_id:
+        return jsonify([])
+    other_user = User.query.get_or_404(other_id)
+    messages = ChatMessage.query.filter(
+        ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == other_user.id)) |
+        ((ChatMessage.sender_id == other_user.id) & (ChatMessage.receiver_id == current_user.id)),
+        ChatMessage.id > last_id
+    ).order_by(ChatMessage.created_at.asc()).all()
+    for msg in messages:
+        if msg.sender_id == other_user.id and not msg.is_read:
+            msg.is_read = True
+    db.session.commit()
+    data = [{
+        'id': m.id,
+        'sender_name': m.sender.full_name,
+        'sender_id': m.sender_id,
+        'message': m.message,
+        'created_at': format_datetime(m.created_at)
+    } for m in messages]
+    return jsonify(data)
+
+# ==================== ADMIN CHAT (unchanged) ====================
+@app.route('/admin/chat')
+@login_required
+@admin_required
+def admin_chat():
+    admin_user = get_admin_user()
+    if not admin_user:
+        flash('Admin user not found.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    sent_ids = db.session.query(ChatMessage.sender_id).filter(ChatMessage.receiver_id == admin_user.id).distinct().all()
+    received_ids = db.session.query(ChatMessage.receiver_id).filter(ChatMessage.sender_id == admin_user.id).distinct().all()
+    user_ids = set([id[0] for id in sent_ids] + [id[0] for id in received_ids])
+    users = User.query.filter(User.id.in_(user_ids)).all()
+    user_data = []
+    for user in users:
+        latest = ChatMessage.query.filter(
+            ((ChatMessage.sender_id == user.id) & (ChatMessage.receiver_id == admin_user.id)) |
+            ((ChatMessage.sender_id == admin_user.id) & (ChatMessage.receiver_id == user.id))
+        ).order_by(ChatMessage.created_at.desc()).first()
+        unread = ChatMessage.query.filter(
+            ChatMessage.sender_id == user.id,
+            ChatMessage.receiver_id == admin_user.id,
+            ChatMessage.is_read == False
+        ).count()
+        user_data.append({
+            'user': user,
+            'latest': latest,
+            'unread': unread
+        })
+    user_data.sort(key=lambda x: x['latest'].created_at if x['latest'] else datetime.min, reverse=True)
+    return render_template('admin/chat.html', user_data=user_data)
+
+@app.route('/admin/chat/<int:user_id>')
+@login_required
+@admin_required
+def admin_chat_with_user(user_id):
+    admin_user = get_admin_user()
+    if not admin_user:
+        flash('Admin user not found.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    user = User.query.get_or_404(user_id)
+    messages = ChatMessage.query.filter(
+        ((ChatMessage.sender_id == user_id) & (ChatMessage.receiver_id == admin_user.id)) |
+        ((ChatMessage.sender_id == admin_user.id) & (ChatMessage.receiver_id == user_id))
+    ).order_by(ChatMessage.created_at.asc()).all()
+    for msg in messages:
+        if msg.sender_id == user_id and not msg.is_read:
+            msg.is_read = True
+    db.session.commit()
+    return render_template('admin/chat_user.html', user=user, messages=messages, admin_user=admin_user)
+
+@app.route('/admin/chat/send', methods=['POST'])
+@login_required
+@admin_required
+def admin_send_chat():
+    user_id = request.form.get('user_id', type=int)
+    message = request.form.get('message', '').strip()
+    if not user_id or not message:
+        return jsonify({'error': 'Missing fields'}), 400
+    admin_user = get_admin_user()
+    if not admin_user:
+        return jsonify({'error': 'Admin not found'}), 404
+    chat_msg = ChatMessage(
+        sender_id=admin_user.id,
+        receiver_id=user_id,
+        message=message
+    )
+    db.session.add(chat_msg)
+    db.session.commit()
+    user = User.query.get(user_id)
+    create_notification(
+        user_id=user_id,
+        type='chat_message',
+        title=f'New reply from Admin',
+        message=message[:200],
+        link=url_for('chat_with_user', user_id=admin_user.id)
+    )
+    return jsonify({'success': True, 'message': message, 'created_at': format_datetime(chat_msg.created_at)})
 
 # ==================== AUTH ====================
 @app.route('/register', methods=['GET', 'POST'])
@@ -1082,7 +1233,7 @@ def provider_dashboard():
     pending_scopes = ScopeRequest.query.filter_by(provider_id=current_user.id, status=ScopeStatus.REQUESTED).order_by(ScopeRequest.created_at.desc()).all()
     active_bookings = Booking.query.filter(
         Booking.provider_id == current_user.id,
-        Booking.status.in_([BookingStatus.PENDING, BookingStatus.CONFIRMED])
+        Booking.status.in_([BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS])
     ).order_by(Booking.scheduled_date).all()
     return render_template('provider_dashboard.html',
                          services=services,
@@ -1111,6 +1262,10 @@ def admin_dashboard():
     pending_scopes = ScopeRequest.query.filter_by(status=ScopeStatus.REQUESTED).count()
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
     recent_bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
+    admin_user = get_admin_user()
+    unread_chats = 0
+    if admin_user:
+        unread_chats = ChatMessage.query.filter_by(receiver_id=admin_user.id, is_read=False).count()
     return render_template('admin/dashboard.html',
                          total_users=total_users,
                          total_services=total_services,
@@ -1118,14 +1273,41 @@ def admin_dashboard():
                          total_reviews=total_reviews,
                          pending_scopes=pending_scopes,
                          recent_users=recent_users,
-                         recent_bookings=recent_bookings)
+                         recent_bookings=recent_bookings,
+                         unread_chats=unread_chats)
 
 @app.route('/admin/users')
 @login_required
 @admin_required
 def admin_users():
-    users = User.query.order_by(User.created_at.desc()).all()
-    return render_template('admin/users.html', users=users)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    if per_page not in [5, 10, 15]:
+        per_page = 10
+
+    role_filter = request.args.get('role', '')
+    search_query = request.args.get('search', '')
+
+    query = User.query
+    if role_filter:
+        query = query.filter_by(role=UserRole(role_filter))
+    if search_query:
+        query = query.filter(
+            or_(
+                User.first_name.ilike(f'%{search_query}%'),
+                User.last_name.ilike(f'%{search_query}%'),
+                User.email.ilike(f'%{search_query}%')
+            )
+        )
+    query = query.order_by(User.created_at.desc())
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    users = paginated.items
+    return render_template('admin/users.html',
+                           users=users,
+                           pagination=paginated,
+                           per_page=per_page,
+                           role_filter=role_filter,
+                           search_query=search_query)
 
 @app.route('/admin/user/<int:user_id>/role', methods=['POST'])
 @login_required
@@ -1158,8 +1340,36 @@ def admin_delete_user(user_id):
 @login_required
 @admin_required
 def admin_services():
-    services = Service.query.order_by(Service.created_at.desc()).all()
-    return render_template('admin/services.html', services=services)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    if per_page not in [5, 10, 15]:
+        per_page = 10
+
+    category_filter = request.args.get('category', '')
+    active_filter = request.args.get('active', '')
+    search_query = request.args.get('search', '')
+
+    query = Service.query
+    if category_filter:
+        query = query.filter_by(category=category_filter)
+    if active_filter != '':
+        is_active = active_filter.lower() == 'true'
+        query = query.filter_by(is_active=is_active)
+    if search_query:
+        query = query.filter(Service.title.ilike(f'%{search_query}%'))
+    query = query.order_by(Service.created_at.desc())
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    services = paginated.items
+    categories = db.session.query(Service.category).distinct().all()
+    categories = [c[0] for c in categories if c[0]]
+    return render_template('admin/services.html',
+                           services=services,
+                           pagination=paginated,
+                           per_page=per_page,
+                           categories=categories,
+                           category_filter=category_filter,
+                           active_filter=active_filter,
+                           search_query=search_query)
 
 @app.route('/admin/service/<int:service_id>/toggle', methods=['POST'])
 @login_required
@@ -1171,22 +1381,53 @@ def admin_toggle_service(service_id):
     flash(f'Service "{service.title}" {"activated" if service.is_active else "deactivated"}.', 'success')
     return redirect(url_for('admin_services'))
 
-@app.route('/admin/service/<int:service_id>/delete', methods=['POST'])
+@app.route('/admin/service/<int:service_id>/remove', methods=['POST'])
 @login_required
 @admin_required
-def admin_delete_service(service_id):
+def admin_remove_service(service_id):
     service = Service.query.get_or_404(service_id)
+    reason = request.form.get('reason', '').strip()
+    if not reason:
+        flash('Please provide a reason for removal.', 'error')
+        return redirect(url_for('admin_services'))
+    create_notification(
+        user_id=service.provider_id,
+        type='service_removed',
+        title='Service Removed',
+        message=f'Your service "{service.title}" has been removed by admin. Reason: {reason}',
+        link=url_for('provider_dashboard')
+    )
     db.session.delete(service)
     db.session.commit()
-    flash(f'Service "{service.title}" deleted.', 'success')
+    flash(f'Service "{service.title}" removed. Provider notified.', 'success')
     return redirect(url_for('admin_services'))
 
 @app.route('/admin/bookings')
 @login_required
 @admin_required
 def admin_bookings():
-    bookings = Booking.query.order_by(Booking.created_at.desc()).all()
-    return render_template('admin/bookings.html', bookings=bookings)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    if per_page not in [5, 10, 15]:
+        per_page = 10
+
+    status_filter = request.args.get('status', '')
+    search_query = request.args.get('search', '')
+
+    query = Booking.query
+    if status_filter:
+        query = query.filter_by(status=BookingStatus(status_filter))
+    if search_query:
+        query = query.join(Service).filter(Service.title.ilike(f'%{search_query}%'))
+    query = query.order_by(Booking.created_at.desc())
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    bookings = paginated.items
+    return render_template('admin/bookings.html',
+                           bookings=bookings,
+                           pagination=paginated,
+                           per_page=per_page,
+                           status_filter=status_filter,
+                           search_query=search_query)
 
 @app.route('/admin/booking/<int:booking_id>/status', methods=['POST'])
 @login_required
@@ -1194,7 +1435,7 @@ def admin_bookings():
 def admin_update_booking_status(booking_id):
     booking = Booking.query.get_or_404(booking_id)
     new_status = request.form['status']
-    if new_status in ['pending', 'confirmed', 'completed', 'cancelled']:
+    if new_status in ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled']:
         booking.status = BookingStatus(new_status)
         db.session.commit()
         flash(f'Booking #{booking.id} status updated to {new_status}.', 'success')
@@ -1206,8 +1447,28 @@ def admin_update_booking_status(booking_id):
 @login_required
 @admin_required
 def admin_reviews():
-    reviews = Review.query.order_by(Review.created_at.desc()).all()
-    return render_template('admin/reviews.html', reviews=reviews)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    if per_page not in [5, 10, 15]:
+        per_page = 10
+
+    rating_filter = request.args.get('rating', type=int)
+    search_query = request.args.get('search', '')
+
+    query = Review.query
+    if rating_filter:
+        query = query.filter(Review.rating >= rating_filter)
+    if search_query:
+        query = query.join(Service).filter(Service.title.ilike(f'%{search_query}%'))
+    query = query.order_by(Review.created_at.desc())
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    reviews = paginated.items
+    return render_template('admin/reviews.html',
+                           reviews=reviews,
+                           pagination=paginated,
+                           per_page=per_page,
+                           rating_filter=rating_filter,
+                           search_query=search_query)
 
 @app.route('/admin/review/<int:review_id>/delete', methods=['POST'])
 @login_required

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Chat with {{ user.full_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Chat with {{ user.full_name }}</h1>
+    <div class="chat-box">
+        <div class="chat-messages" id="chatMessages">
+            {% for msg in messages %}
+                <div class="chat-message {{ 'sent' if msg.sender_id == admin_user.id else 'received' }}">
+                    <div class="message-sender">{{ msg.sender.full_name }}</div>
+                    <div class="message-text">{{ msg.message }}</div>
+                    <div class="message-time">{{ format_datetime(msg.created_at) }}</div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="chat-input">
+            <form id="chatForm" method="POST" action="{{ url_for('admin_send_chat') }}">
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+                <input type="text" name="message" id="chatInput" placeholder="Type your reply..." required>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatMessages = document.getElementById('chatMessages');
+    let lastId = {{ messages[-1].id if messages else 0 }};
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    scrollToBottom();
+
+    // Poll for new messages
+    function fetchMessages() {
+        fetch(`/chat/messages?last_id=${lastId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.length > 0) {
+                    data.forEach(msg => {
+                        const div = document.createElement('div');
+                        div.className = `chat-message ${msg.sender_id == {{ admin_user.id }} ? 'sent' : 'received'}`;
+                        div.innerHTML = `
+                            <div class="message-sender">${msg.sender_name}</div>
+                            <div class="message-text">${msg.message}</div>
+                            <div class="message-time">${msg.created_at}</div>
+                        `;
+                        chatMessages.appendChild(div);
+                        lastId = msg.id;
+                    });
+                    scrollToBottom();
+                }
+            });
+    }
+
+    setInterval(fetchMessages, 3000);
+
+    document.getElementById('chatForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        const formData = new FormData(form);
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Add the message locally
+                const div = document.createElement('div');
+                div.className = 'chat-message sent';
+                div.innerHTML = `
+                    <div class="message-sender">Admin</div>
+                    <div class="message-text">${data.message}</div>
+                    <div class="message-time">${data.created_at}</div>
+                `;
+                chatMessages.appendChild(div);
+                scrollToBottom();
+                document.getElementById('chatInput').value = '';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -8,7 +8,21 @@
     
     <!-- Scope Requests Section -->
     <div class="section">
-        <h2><i class="fas fa-clipboard-list"></i> Scope Requests</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <h2><i class="fas fa-clipboard-list"></i> Scope Requests</h2>
+            <form method="GET" action="{{ url_for('my_bookings') }}" style="display:flex; gap:0.5rem; align-items:center;">
+                <label>Per page:</label>
+                <select name="scope_per_page" onchange="this.form.submit()">
+                    <option value="5" {% if scope_per_page == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if scope_per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="15" {% if scope_per_page == 15 %}selected{% endif %}>15</option>
+                </select>
+                <!-- Preserve other query params -->
+                <input type="hidden" name="per_page" value="{{ per_page }}">
+                <input type="hidden" name="page" value="{{ bookings_pagination.page if bookings_pagination else 1 }}">
+            </form>
+        </div>
+
         {% if scopes %}
             <div class="bookings-list">
                 {% for scope in scopes %}
@@ -47,6 +61,23 @@
                 </div>
                 {% endfor %}
             </div>
+
+            <!-- Pagination for Scope Requests -->
+            <div class="pagination" style="margin-top:1rem;">
+                {% if scopes_pagination.has_prev %}
+                    <a href="{{ url_for('my_bookings', scope_page=scopes_pagination.prev_num, scope_per_page=scope_per_page, per_page=per_page, page=bookings_pagination.page if bookings_pagination else 1) }}" class="btn btn-outline">&laquo; Previous</a>
+                {% else %}
+                    <span class="btn btn-text disabled">&laquo; Previous</span>
+                {% endif %}
+
+                <span class="page-info">Page {{ scopes_pagination.page }} of {{ scopes_pagination.pages }}</span>
+
+                {% if scopes_pagination.has_next %}
+                    <a href="{{ url_for('my_bookings', scope_page=scopes_pagination.next_num, scope_per_page=scope_per_page, per_page=per_page, page=bookings_pagination.page if bookings_pagination else 1) }}" class="btn btn-outline">Next &raquo;</a>
+                {% else %}
+                    <span class="btn btn-text disabled">Next &raquo;</span>
+                {% endif %}
+            </div>
         {% else %}
             <p class="text-muted">No scope requests yet.</p>
         {% endif %}
@@ -54,7 +85,20 @@
     
     <!-- Bookings Section -->
     <div class="section">
-        <h2><i class="fas fa-calendar-check"></i> Bookings</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <h2><i class="fas fa-calendar-check"></i> Bookings</h2>
+            <form method="GET" action="{{ url_for('my_bookings') }}" style="display:flex; gap:0.5rem; align-items:center;">
+                <label>Per page:</label>
+                <select name="per_page" onchange="this.form.submit()">
+                    <option value="5" {% if per_page == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+                </select>
+                <input type="hidden" name="scope_per_page" value="{{ scope_per_page }}">
+                <input type="hidden" name="scope_page" value="{{ scopes_pagination.page if scopes_pagination else 1 }}">
+            </form>
+        </div>
+
         {% if bookings %}
             <div class="bookings-list">
                 {% for booking in bookings %}
@@ -81,13 +125,18 @@
                         {% if current_user.role.value == 'provider' %}
                             {% if booking.status.value == 'pending' %}
                                 <form action="{{ url_for('update_booking_status', booking_id=booking.id) }}" method="POST" style="display:inline;">
-                                    <input type="hidden" name="status" value="confirmed">
+                                    <input type="hidden" name="action" value="confirm">
                                     <button type="submit" class="btn btn-success btn-sm">Confirm Booking</button>
                                 </form>
                             {% elif booking.status.value == 'confirmed' %}
                                 <form action="{{ url_for('update_booking_status', booking_id=booking.id) }}" method="POST" style="display:inline;">
-                                    <input type="hidden" name="status" value="completed">
-                                    <button type="submit" class="btn btn-primary btn-sm">Mark Complete</button>
+                                    <input type="hidden" name="action" value="start">
+                                    <button type="submit" class="btn btn-primary btn-sm">Begin Work</button>
+                                </form>
+                            {% elif booking.status.value == 'in_progress' %}
+                                <form action="{{ url_for('update_booking_status', booking_id=booking.id) }}" method="POST" style="display:inline;">
+                                    <input type="hidden" name="action" value="complete">
+                                    <button type="submit" class="btn btn-success btn-sm">Complete Job</button>
                                 </form>
                             {% endif %}
                         {% endif %}
@@ -98,9 +147,16 @@
                             <span class="badge badge-success"><i class="fas fa-check"></i> Reviewed</span>
                         {% endif %}
                         
-                        {% if booking.status.value in ['pending', 'confirmed'] and current_user.role.value != 'admin' %}
+                        <!-- Chat button -->
+                        {% set other_id = booking.provider_id if current_user.id == booking.customer_id else booking.customer_id %}
+                        <a href="{{ url_for('chat_with_user', user_id=other_id) }}" class="btn btn-outline btn-sm">
+                            <i class="fas fa-comment"></i> Chat
+                        </a>
+                        
+                        {% if booking.status.value in ['pending', 'confirmed', 'in_progress'] and current_user.role.value != 'admin' %}
                             <form action="{{ url_for('update_booking_status', booking_id=booking.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Cancel this booking?');">
-                                <input type="hidden" name="status" value="cancelled">
+                                <input type="hidden" name="action" value="cancel">
+                                <input type="hidden" name="reason" value="User cancelled">
                                 <button type="submit" class="btn btn-text btn-sm text-danger">Cancel</button>
                             </form>
                         {% endif %}
@@ -108,11 +164,118 @@
                 </div>
                 {% endfor %}
             </div>
+
+            <!-- Pagination for Bookings -->
+            <div class="pagination" style="margin-top:1rem;">
+                {% if bookings_pagination.has_prev %}
+                    <a href="{{ url_for('my_bookings', page=bookings_pagination.prev_num, per_page=per_page, scope_per_page=scope_per_page, scope_page=scopes_pagination.page if scopes_pagination else 1) }}" class="btn btn-outline">&laquo; Previous</a>
+                {% else %}
+                    <span class="btn btn-text disabled">&laquo; Previous</span>
+                {% endif %}
+
+                <span class="page-info">Page {{ bookings_pagination.page }} of {{ bookings_pagination.pages }}</span>
+
+                {% if bookings_pagination.has_next %}
+                    <a href="{{ url_for('my_bookings', page=bookings_pagination.next_num, per_page=per_page, scope_per_page=scope_per_page, scope_page=scopes_pagination.page if scopes_pagination else 1) }}" class="btn btn-outline">Next &raquo;</a>
+                {% else %}
+                    <span class="btn btn-text disabled">Next &raquo;</span>
+                {% endif %}
+            </div>
         {% else %}
             <p class="text-muted">No bookings yet.</p>
         {% endif %}
     </div>
 </div>
+
+<!-- Review Modal -->
+<div id="reviewModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>How was your experience?</h2>
+        <p>Please rate the service for <strong id="modalServiceTitle"></strong></p>
+        <form id="reviewForm" method="POST" action="">
+            <div class="form-group">
+                <label>Rating</label>
+                <div class="star-rating" id="modalStarRating">
+                    <div class="stars-container">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                    <input type="hidden" name="rating" id="modalRatingInput" value="0" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Comment (optional)</label>
+                <textarea name="comment" rows="3" placeholder="Share your experience..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+                <button type="button" onclick="closeModal()" class="btn btn-text">Skip</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for completed bookings without review
+    const completedBookings = document.querySelectorAll('.booking-card');
+    let reviewable = [];
+    completedBookings.forEach(card => {
+        const status = card.querySelector('.status-badge');
+        if (status && status.classList.contains('status-completed')) {
+            const reviewBtn = card.querySelector('.btn-warning');
+            if (reviewBtn) {
+                reviewable.push(card);
+            }
+        }
+    });
+    if (reviewable.length > 0) {
+        const firstCard = reviewable[0];
+        const reviewLink = firstCard.querySelector('a.btn-warning');
+        if (reviewLink) {
+            const serviceTitle = firstCard.querySelector('h3').innerText;
+            document.getElementById('modalServiceTitle').innerText = serviceTitle;
+            document.getElementById('reviewForm').action = reviewLink.href;
+            document.getElementById('reviewModal').style.display = 'flex';
+            const stars = document.querySelectorAll('#modalStarRating .star');
+            const ratingInput = document.getElementById('modalRatingInput');
+            let selectedRating = 0;
+            function updateStars(rating) {
+                stars.forEach(star => {
+                    const value = parseInt(star.getAttribute('data-value'));
+                    if (value <= rating) {
+                        star.classList.add('filled');
+                    } else {
+                        star.classList.remove('filled');
+                    }
+                });
+            }
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    selectedRating = value;
+                    ratingInput.value = value;
+                    updateStars(value);
+                });
+                star.addEventListener('mouseenter', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    updateStars(value);
+                });
+                star.addEventListener('mouseleave', function() {
+                    updateStars(selectedRating);
+                });
+            });
+        }
+    }
+});
+
+function closeModal() {
+    document.getElementById('reviewModal').style.display = 'none';
+}
+</script>
 
 <!-- Scope Response Modal -->
 <div id="responseModal" class="modal" style="display: none;">

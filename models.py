@@ -38,6 +38,7 @@ class UserRole(enum.Enum):
 class BookingStatus(enum.Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
+    IN_PROGRESS = "in_progress"   # <-- new status
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
@@ -78,6 +79,12 @@ class User(UserMixin, db.Model):
     scope_requests = db.relationship('ScopeRequest', foreign_keys='ScopeRequest.customer_id', backref='scope_customer', lazy='dynamic')
     scope_responses = db.relationship('ScopeRequest', foreign_keys='ScopeRequest.provider_id', backref='scope_provider', lazy='dynamic')
     
+    # Notifications
+    notifications = db.relationship('Notification', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    # Chat messages - sent and received (any user)
+    sent_messages = db.relationship('ChatMessage', foreign_keys='ChatMessage.sender_id', backref='sender', lazy='dynamic')
+    received_messages = db.relationship('ChatMessage', foreign_keys='ChatMessage.receiver_id', backref='receiver', lazy='dynamic')
+    
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
@@ -92,6 +99,10 @@ class User(UserMixin, db.Model):
     @property
     def review_count(self):
         return self.reviews_received.count()
+    
+    @property
+    def unread_notification_count(self):
+        return self.notifications.filter_by(read=False).count()
 
 class Service(db.Model):
     __tablename__ = 'services'
@@ -161,6 +172,7 @@ class Booking(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     confirmed_at = db.Column(db.DateTime)
+    started_at = db.Column(db.DateTime)          # new
     completed_at = db.Column(db.DateTime)
     cancelled_at = db.Column(db.DateTime)
     cancellation_reason = db.Column(db.Text)
@@ -183,3 +195,25 @@ class Review(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     booking = db.relationship('Booking', backref='review')
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    type = db.Column(db.String(50), nullable=False)  # 'scope_requested', 'scope_responded', 'booking_created', 'booking_confirmed', 'booking_started', 'booking_completed', 'booking_cancelled', 'service_removed', 'chat_message'
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    link = db.Column(db.String(500))
+    read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ChatMessage(db.Model):
+    __tablename__ = 'chat_messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

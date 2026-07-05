@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Admin Chat{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Chat with Users</h1>
+    <p>Select a user to view conversation.</p>
+    <div class="chat-list">
+        {% for item in user_data %}
+            <div class="chat-list-item">
+                <a href="{{ url_for('admin_chat_with_user', user_id=item.user.id) }}" style="display:flex; justify-content:space-between; align-items:center; text-decoration:none; color:inherit;">
+                    <div>
+                        <strong>{{ item.user.full_name }}</strong> ({{ item.user.email }})
+                        {% if item.unread > 0 %}
+                            <span class="badge badge-danger">{{ item.unread }} new</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if item.latest %}
+                            <span class="text-muted">{{ format_datetime(item.latest.created_at) }}</span>
+                        {% endif %}
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </a>
+            </div>
+        {% else %}
+            <p class="text-muted">No chat messages yet.</p>
+        {% endfor %}
+    </div>
+</div>
+<style>
+.chat-list-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+}
+.chat-list-item:hover {
+    background: #f5f5f5;
+}
+</style>
+{% endblock %}

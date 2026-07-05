@@ -10,76 +10,101 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="{{ url_for('index') }}" class="logo">
-                <i class="fas fa-bullseye"></i>
-                <span>QuickScope</span>
-            </a>
-            
-            <div class="nav-search">
-                <form action="{{ url_for('services_page') }}" method="GET">
-                    <input type="text" name="q" placeholder="Search services..." value="{{ request.args.get('q', '') }}">
-                    <button type="submit"><i class="fas fa-search"></i></button>
-                </form>
-            </div>
-            
-            <div class="nav-links">
-                <a href="{{ url_for('about') }}" class="nav-link">About</a>
-                <a href="{{ url_for('services_page') }}" class="nav-link">Services</a>
-                {% if current_user.is_authenticated %}
-                    {% if current_user.role.value == 'provider' %}
-                        <a href="{{ url_for('provider_dashboard') }}" class="nav-link">
-                            <i class="fas fa-chart-line"></i> Dashboard
-                        </a>
-                        <a href="{{ url_for('create_service') }}" class="nav-link">
-                            <i class="fas fa-plus-circle"></i> List Service
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('my_bookings') }}" class="nav-link">
-                            <i class="fas fa-calendar-check"></i> My Bookings
-                        </a>
-                    {% endif %}
-                    {% if current_user.role.value == 'admin' %}
-                        <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
-                            <i class="fas fa-shield-alt"></i> Admin
-                        </a>
-                    {% endif %}
-                    <div class="nav-dropdown">
-                        <button class="nav-user">
-                            {% if current_user.avatar_url %}
-                                <img src="{{ current_user.avatar_url }}" alt="Avatar" class="avatar-small">
-                            {% else %}
-                                <div class="avatar-placeholder">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>
-                            {% endif %}
-                            <span>{{ current_user.first_name }}</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu">
-                            <a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a>
-                            <a href="{{ url_for('my_bookings') }}"><i class="fas fa-list"></i> My Bookings</a>
-                            <hr>
-                            <form action="{{ url_for('switch_role') }}" method="POST" style="display:inline;">
-                                <input type="hidden" name="role" value="{{ 'provider' if current_user.role.value == 'customer' else 'customer' }}">
-                                <button type="submit" class="dropdown-item">
-                                    <i class="fas fa-exchange-alt"></i> Switch to {{ 'Provider' if current_user.role.value == 'customer' else 'Customer' }} Mode
-                                </button>
-                            </form>
-                            <hr>
-                            <a href="{{ url_for('logout') }}" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                        </div>
-                    </div>
-                {% else %}
-                    <a href="{{ url_for('login') }}" class="nav-link">Log In</a>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
-                {% endif %}
-            </div>
-            
-            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation">
-                <i class="fas fa-bars"></i>
-            </button>
+   <nav class="navbar">
+    <div class="nav-container">
+        <a href="{{ url_for('index') }}" class="logo">
+            <i class="fas fa-bullseye"></i>
+            <span>QuickScope</span>
+        </a>
+        
+        <div class="nav-search">
+            <form action="{{ url_for('services_page') }}" method="GET">
+                <input type="text" name="q" placeholder="Search services..." value="{{ request.args.get('q', '') }}">
+                <button type="submit"><i class="fas fa-search"></i></button>
+            </form>
         </div>
-    </nav>
+        
+        <div class="nav-links">
+            <a href="{{ url_for('about') }}" class="nav-link">About</a>
+            <a href="{{ url_for('services_page') }}" class="nav-link">Services</a>
+            {% if current_user.is_authenticated %}
+                <!-- Notifications -->
+                <div class="nav-dropdown" style="position:relative;">
+                    <a href="{{ url_for('notifications') }}" class="nav-link" style="position:relative;">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_notifications > 0 %}
+                            <span class="notification-badge">{{ unread_notifications }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+                <!-- Chat with conversations -->
+                <a href="{{ url_for('chat_conversations') }}" class="nav-link" style="position:relative;">
+                    <i class="fas fa-comment"></i>
+                    {% if chat_unread > 0 %}
+                        <span class="notification-badge" style="background:#e74c3c; color:white; font-size:10px; padding:0 4px; border-radius:50%; margin-left:2px;">{{ chat_unread }}</span>
+                    {% endif %}
+                </a>
+                <!-- Contact Admin -->
+                <a href="{{ url_for('contact_admin') }}" class="nav-link">
+                    <i class="fas fa-headset"></i> Contact Admin
+                </a>
+                <!-- Existing nav links -->
+                {% if current_user.role.value == 'provider' %}
+                    <a href="{{ url_for('provider_dashboard') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('create_service') }}" class="nav-link">
+                        <i class="fas fa-plus-circle"></i> List Service
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('my_bookings') }}" class="nav-link">
+                        <i class="fas fa-calendar-check"></i> My Bookings
+                    </a>
+                {% endif %}
+                <!-- Admin Dashboard Link -->
+                {% if current_user.role.value == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                        <i class="fas fa-shield-alt"></i> Admin
+                    </a>
+                {% endif %}
+                <div class="nav-dropdown">
+                    <button class="nav-user">
+                        {% if current_user.avatar_url %}
+                            <img src="{{ current_user.avatar_url }}" alt="Avatar" class="avatar-small">
+                        {% else %}
+                            <div class="avatar-placeholder">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>
+                        {% endif %}
+                        <span>{{ current_user.first_name }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a>
+                        <a href="{{ url_for('my_bookings') }}"><i class="fas fa-list"></i> My Bookings</a>
+                        <a href="{{ url_for('notifications') }}"><i class="fas fa-bell"></i> Notifications</a>
+                        <a href="{{ url_for('chat_conversations') }}"><i class="fas fa-comment"></i> Chat</a>
+                        <a href="{{ url_for('contact_admin') }}"><i class="fas fa-headset"></i> Contact Admin</a>
+                        <hr>
+                        <form action="{{ url_for('switch_role') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="role" value="{{ 'provider' if current_user.role.value == 'customer' else 'customer' }}">
+                            <button type="submit" class="dropdown-item">
+                                <i class="fas fa-exchange-alt"></i> Switch to {{ 'Provider' if current_user.role.value == 'customer' else 'Customer' }} Mode
+                            </button>
+                        </form>
+                        <hr>
+                        <a href="{{ url_for('logout') }}" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="nav-link">Log In</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+            {% endif %}
+        </div>
+        
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+</nav>
     
     <div class="mobile-menu" id="mobileMenu">
         <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
@@ -88,6 +113,9 @@
         {% if current_user.is_authenticated %}
             <a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a>
             <a href="{{ url_for('my_bookings') }}"><i class="fas fa-calendar-check"></i> My Bookings</a>
+            <a href="{{ url_for('chat_conversations') }}"><i class="fas fa-comment"></i> Chat</a>
+            <a href="{{ url_for('contact_admin') }}"><i class="fas fa-headset"></i> Contact Admin</a>
+            <a href="{{ url_for('notifications') }}"><i class="fas fa-bell"></i> Notifications</a>
             {% if current_user.role.value == 'provider' %}
                 <a href="{{ url_for('provider_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a>
                 <a href="{{ url_for('create_service') }}"><i class="fas fa-plus-circle"></i> List Service</a>

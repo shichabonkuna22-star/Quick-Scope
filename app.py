@@ -55,7 +55,7 @@ def get_admin_user():
 
 # ---------- Helper for database schema updates ----------
 def ensure_schema():
-    """Add missing columns and fix nullable constraints."""
+    """Add missing columns and make appropriate columns nullable."""
     try:
         inspector = inspect(db.engine)
 
@@ -113,15 +113,17 @@ def ensure_schema():
                 conn.commit()
                 print("✅ Added column role to users table.")
 
-        # **FIX: Make id_number nullable if it exists and is NOT NULL**
-        if 'id_number' in columns_users:
-            # Check if the column is currently NOT NULL
-            col_info = [col for col in inspector.get_columns('users') if col['name'] == 'id_number'][0]
-            if not col_info.get('nullable', True):
-                with db.engine.connect() as conn:
-                    conn.execute(text('ALTER TABLE users ALTER COLUMN id_number DROP NOT NULL'))
-                    conn.commit()
-                    print("✅ Made id_number column nullable.")
+        # **Make nullable all columns that should accept NULL**
+        nullable_columns = ['phone', 'whatsapp_number', 'avatar_url', 'business_name', 'business_description', 'location', 'id_number']
+        for col_name in nullable_columns:
+            if col_name in columns_users:
+                col_info = [col for col in inspector.get_columns('users') if col['name'] == col_name][0]
+                if not col_info.get('nullable', True):
+                    with db.engine.connect() as conn:
+                        # Use PostgreSQL specific syntax
+                        conn.execute(text(f'ALTER TABLE users ALTER COLUMN {col_name} DROP NOT NULL'))
+                        conn.commit()
+                        print(f"✅ Made column {col_name} nullable.")
 
     except Exception as e:
         print(f"⚠️ Schema update warning: {e}")
@@ -353,7 +355,7 @@ def seed_database():
 # ---------- Create tables, seed, and ensure schema ----------
 with app.app_context():
     db.create_all()
-    ensure_schema()  # ✅ Adds missing columns and fixes id_number
+    ensure_schema()  # ✅ Adds missing columns and makes nullable
 
     admin_email = "admin@quickscope.com"
     admin = User.query.filter_by(email=admin_email).first()

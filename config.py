@@ -8,8 +8,8 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///quickscope.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # File upload – we'll use Cloudinary instead of local filesystem
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
+    # File upload – use /tmp on Vercel (ephemeral, but Cloudinary is used anyway)
+    UPLOAD_FOLDER = '/tmp/uploads'   # ✅ changed to /tmp
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
     # Google OAuth

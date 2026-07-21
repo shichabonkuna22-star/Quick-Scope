@@ -25,6 +25,7 @@ from models import format_datetime, format_date, get_sast_time
 from models import Notification, ChatMessage
 
 app = Flask(__name__)
+app.instance_path = '/tmp'          # 👈 Fix for Vercel read‑only filesystem
 app.config.from_object(Config)
 
 # Cloudinary configuration
@@ -34,8 +35,9 @@ cloudinary.config(
     api_secret=app.config['CLOUDINARY_API_SECRET']
 )
 
-# Ensure upload folder exists (optional – Cloudinary now handles uploads)
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# No need to create UPLOAD_FOLDER – Cloudinary handles uploads.
+# If you need a temp folder for any reason, use /tmp.
+# os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
 

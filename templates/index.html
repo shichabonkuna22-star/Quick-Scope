@@ -106,8 +106,6 @@
 </div>
 <!-- About End -->
 
-
-
 <!-- Testimonial Start -->
 <div class="container-fluid testimonial bg-dark py-5">
     <div class="container py-5">
@@ -191,82 +189,16 @@
 </div>
 <!-- Testimonial End -->
 
-<!-- Services Start (Featured Categories) -->
-<div class="container-fluid service py-5">
-    <div class="container py-5">
-        <div class="d-flex flex-column mx-auto text-center mb-5 wow fadeInUp" data-wow-delay="0.2s" style="max-width: 800px;">
-            <h4 class="text-primary">Popular Categories</h4>
-            <h1 class="display-4 mb-4">Find the Service You Need</h1>
-            <p class="mb-0">Browse through our wide range of service categories, each with vetted professionals ready to help you.
-            </p>
-        </div>
-        <div class="row g-5 align-items-center">
-            <div class="col-lg-3 wow fadeInLeft" data-wow-delay="0.2s">
-                <ul class="nav flex-column">
-                    {% for cat in categories %}
-                        <li class="nav-item me-lg-0 mb-4">
-                            <a class="py-3 px-5 {{ 'active' if loop.first else '' }}" data-bs-toggle="pill" href="#ServiceTab-{{ loop.index }}">
-                                <span>{{ cat }}</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item me-lg-0 mb-4">
-                            <a class="py-3 px-5 active" data-bs-toggle="pill" href="#ServiceTab-1">
-                                <span>No categories yet</span>
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="col-lg-9 wow fadeInRight" data-wow-delay="0.3s">
-                <div class="tab-content">
-                    {% for cat in categories %}
-                        <div id="ServiceTab-{{ loop.index }}" class="tab-pane fade show p-0 {{ 'active' if loop.first else '' }}">
-                            <div class="service-carousel owl-carousel">
-                                {% set cat_services = services|selectattr('category', 'equalto', cat)|list %}
-                                {% if cat_services %}
-                                    {% for service in cat_services[:6] %}
-                                    <div class="service-item">
-                                        <img src="{{ get_image_url(service.image_filename) or url_for('static', filename='img/commercial-1.jpg') }}" class="img-fluid w-100" alt="{{ service.title }}" style="height: 200px; object-fit: cover;">
-                                        <div class="border border-top-0 p-4">
-                                            <h4 class="mb-3">{{ service.title }}</h4>
-                                            <p class="mb-4">{{ service.description[:100] }}...</p>
-                                            <a class="btn btn-primary py-2 px-4" href="{{ url_for('service_detail', service_id=service.id) }}">View Details</a>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="service-item">
-                                        <img src="{{ url_for('static', filename='img/commercial-1.jpg') }}" class="img-fluid w-100" alt="No services" style="height: 200px; object-fit: cover;">
-                                        <div class="border border-top-0 p-4">
-                                            <h4 class="mb-3">No services in {{ cat }}</h4>
-                                            <p class="mb-4">Check back later or browse other categories.</p>
-                                            <a class="btn btn-primary py-2 px-4" href="{{ url_for('services_page') }}">View All Services</a>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% else %}
-                        <div id="ServiceTab-1" class="tab-pane fade show p-0 active">
-                            <div class="service-carousel owl-carousel">
-                                <div class="service-item">
-                                    <img src="{{ url_for('static', filename='img/commercial-1.jpg') }}" class="img-fluid w-100" alt="No services" style="height: 200px; object-fit: cover;">
-                                    <div class="border border-top-0 p-4">
-                                        <h4 class="mb-3">No services available</h4>
-                                        <p class="mb-4">Start by listing your services or check back later.</p>
-                                        <a class="btn btn-primary py-2 px-4" href="{{ url_for('services_page') }}">View All Services</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+<!-- Call to Action: Browse All Services -->
+<div class="container-fluid py-5 wow fadeInUp" data-wow-delay="0.2s">
+    <div class="container py-5 text-center">
+        <h2 class="display-4 mb-4">Ready to Find the Right Professional?</h2>
+        <p class="fs-5 mb-4">Explore all our services and connect with trusted providers near you.</p>
+        <a href="{{ url_for('services_page') }}" class="btn btn-primary btn-lg px-5 py-3">
+            <i class="fas fa-list me-2"></i> Browse All Services
+        </a>
     </div>
 </div>
-<!-- Services End -->
-
+<!-- Call to Action End -->
 
 {% endblock %}

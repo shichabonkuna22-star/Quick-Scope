@@ -55,7 +55,7 @@ def get_admin_user():
 
 # ---------- Helper for database schema updates ----------
 def ensure_schema():
-    """Add any missing columns to the bookings and users tables."""
+    """Add missing columns and fix nullable constraints."""
     try:
         inspector = inspect(db.engine)
 
@@ -70,6 +70,7 @@ def ensure_schema():
         # Users table
         columns_users = [col['name'] for col in inspector.get_columns('users')]
 
+        # Add missing columns if they don't exist
         if 'whatsapp_number' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(20)'))
@@ -106,12 +107,21 @@ def ensure_schema():
                 conn.commit()
                 print("✅ Added column location to users table.")
 
-        # 👇 **FIX: Add `role` column**
         if 'role' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN role VARCHAR(50)'))
                 conn.commit()
                 print("✅ Added column role to users table.")
+
+        # **FIX: Make id_number nullable if it exists and is NOT NULL**
+        if 'id_number' in columns_users:
+            # Check if the column is currently NOT NULL
+            col_info = [col for col in inspector.get_columns('users') if col['name'] == 'id_number'][0]
+            if not col_info.get('nullable', True):
+                with db.engine.connect() as conn:
+                    conn.execute(text('ALTER TABLE users ALTER COLUMN id_number DROP NOT NULL'))
+                    conn.commit()
+                    print("✅ Made id_number column nullable.")
 
     except Exception as e:
         print(f"⚠️ Schema update warning: {e}")
@@ -343,7 +353,7 @@ def seed_database():
 # ---------- Create tables, seed, and ensure schema ----------
 with app.app_context():
     db.create_all()
-    ensure_schema()  # ✅ Adds missing columns including 'role'
+    ensure_schema()  # ✅ Adds missing columns and fixes id_number
 
     admin_email = "admin@quickscope.com"
     admin = User.query.filter_by(email=admin_email).first()

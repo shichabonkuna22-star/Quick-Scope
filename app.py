@@ -25,7 +25,7 @@ from models import format_datetime, format_date, get_sast_time
 from models import Notification, ChatMessage
 
 app = Flask(__name__)
-app.instance_path = '/tmp'          # 👈 Fix for Vercel read‑only filesystem
+app.instance_path = '/tmp'
 app.config.from_object(Config)
 
 # Cloudinary configuration
@@ -34,10 +34,6 @@ cloudinary.config(
     api_key=app.config['CLOUDINARY_API_KEY'],
     api_secret=app.config['CLOUDINARY_API_SECRET']
 )
-
-# No need to create UPLOAD_FOLDER – Cloudinary handles uploads.
-# If you need a temp folder for any reason, use /tmp.
-# os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
 
@@ -72,15 +68,50 @@ def ensure_schema():
                 conn.commit()
                 print("✅ Added column started_at to bookings table.")
 
-        # Check for users.whatsapp_number
+        # Check for users columns
         columns_users = [col['name'] for col in inspector.get_columns('users')]
+
+        # Add whatsapp_number if missing
         if 'whatsapp_number' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(20)'))
                 conn.commit()
                 print("✅ Added column whatsapp_number to users table.")
 
-        # You can add other missing columns here in the future.
+        # Add avatar_url if missing
+        if 'avatar_url' not in columns_users:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)'))
+                conn.commit()
+                print("✅ Added column avatar_url to users table.")
+
+        # Add is_oauth if missing
+        if 'is_oauth' not in columns_users:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN is_oauth BOOLEAN DEFAULT FALSE'))
+                conn.commit()
+                print("✅ Added column is_oauth to users table.")
+
+        # Add business_name if missing
+        if 'business_name' not in columns_users:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN business_name VARCHAR(100)'))
+                conn.commit()
+                print("✅ Added column business_name to users table.")
+
+        # Add business_description if missing
+        if 'business_description' not in columns_users:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN business_description TEXT'))
+                conn.commit()
+                print("✅ Added column business_description to users table.")
+
+        # Add location if missing
+        if 'location' not in columns_users:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN location VARCHAR(200)'))
+                conn.commit()
+                print("✅ Added column location to users table.")
 
     except Exception as e:
         print(f"⚠️ Schema update warning: {e}")
@@ -312,7 +343,7 @@ def seed_database():
 # ---------- Create tables, seed, and ensure schema ----------
 with app.app_context():
     db.create_all()
-    ensure_schema()  # ✅ This will add missing columns like whatsapp_number
+    ensure_schema()  # ✅ Adds missing columns
 
     admin_email = "admin@quickscope.com"
     admin = User.query.filter_by(email=admin_email).first()
@@ -504,7 +535,6 @@ def create_service():
         if 'service_image' in request.files:
             file = request.files['service_image']
             if file and allowed_file(file.filename):
-                # Upload to Cloudinary
                 upload_result = cloudinary.uploader.upload(file)
                 image_filename = upload_result['secure_url']
 
@@ -583,7 +613,6 @@ def upload_gallery_image():
         return redirect(url_for('manage_gallery'))
     file = request.files['gallery_image']
     if file and allowed_file(file.filename):
-        # Upload to Cloudinary
         upload_result = cloudinary.uploader.upload(file)
         filename = upload_result['secure_url']
         caption = request.form.get('caption', '')
@@ -607,7 +636,6 @@ def delete_gallery_image(image_id):
     if image.provider_id != current_user.id:
         flash('Unauthorized.', 'error')
         return redirect(url_for('manage_gallery'))
-    # No need to delete from Cloudinary here; just remove the DB record.
     db.session.delete(image)
     db.session.commit()
     flash('Image deleted.', 'success')

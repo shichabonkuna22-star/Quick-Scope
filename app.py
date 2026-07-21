@@ -114,13 +114,12 @@ def ensure_schema():
                 print("✅ Added column role to users table.")
 
         # **Make nullable all columns that should accept NULL**
-        nullable_columns = ['phone', 'whatsapp_number', 'avatar_url', 'business_name', 'business_description', 'location', 'id_number']
+        nullable_columns = ['phone', 'whatsapp_number', 'avatar_url', 'business_name', 'business_description', 'location', 'id_number', 'address']
         for col_name in nullable_columns:
             if col_name in columns_users:
                 col_info = [col for col in inspector.get_columns('users') if col['name'] == col_name][0]
                 if not col_info.get('nullable', True):
                     with db.engine.connect() as conn:
-                        # Use PostgreSQL specific syntax
                         conn.execute(text(f'ALTER TABLE users ALTER COLUMN {col_name} DROP NOT NULL'))
                         conn.commit()
                         print(f"✅ Made column {col_name} nullable.")

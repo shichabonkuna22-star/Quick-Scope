@@ -51,7 +51,6 @@ def create_notification(user_id, type, title, message, link=None):
     return notif
 
 def get_admin_user():
-    """Return the admin user (by email)."""
     return User.query.filter_by(email='admin@quickscope.com').first()
 
 # ---------- Helper for database schema updates ----------
@@ -60,7 +59,7 @@ def ensure_schema():
     try:
         inspector = inspect(db.engine)
 
-        # Check for bookings.started_at
+        # Bookings table
         columns_bookings = [col['name'] for col in inspector.get_columns('bookings')]
         if 'started_at' not in columns_bookings:
             with db.engine.connect() as conn:
@@ -68,50 +67,51 @@ def ensure_schema():
                 conn.commit()
                 print("✅ Added column started_at to bookings table.")
 
-        # Check for users columns
+        # Users table
         columns_users = [col['name'] for col in inspector.get_columns('users')]
 
-        # Add whatsapp_number if missing
         if 'whatsapp_number' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(20)'))
                 conn.commit()
                 print("✅ Added column whatsapp_number to users table.")
 
-        # Add avatar_url if missing
         if 'avatar_url' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)'))
                 conn.commit()
                 print("✅ Added column avatar_url to users table.")
 
-        # Add is_oauth if missing
         if 'is_oauth' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN is_oauth BOOLEAN DEFAULT FALSE'))
                 conn.commit()
                 print("✅ Added column is_oauth to users table.")
 
-        # Add business_name if missing
         if 'business_name' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN business_name VARCHAR(100)'))
                 conn.commit()
                 print("✅ Added column business_name to users table.")
 
-        # Add business_description if missing
         if 'business_description' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN business_description TEXT'))
                 conn.commit()
                 print("✅ Added column business_description to users table.")
 
-        # Add location if missing
         if 'location' not in columns_users:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE users ADD COLUMN location VARCHAR(200)'))
                 conn.commit()
                 print("✅ Added column location to users table.")
+
+        # 👇 **FIX: Add `role` column**
+        if 'role' not in columns_users:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN role VARCHAR(50)'))
+                conn.commit()
+                print("✅ Added column role to users table.")
 
     except Exception as e:
         print(f"⚠️ Schema update warning: {e}")
@@ -343,7 +343,7 @@ def seed_database():
 # ---------- Create tables, seed, and ensure schema ----------
 with app.app_context():
     db.create_all()
-    ensure_schema()  # ✅ Adds missing columns
+    ensure_schema()  # ✅ Adds missing columns including 'role'
 
     admin_email = "admin@quickscope.com"
     admin = User.query.filter_by(email=admin_email).first()

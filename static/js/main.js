@@ -25,7 +25,7 @@
         autoplay: true,
         smartSpeed: 1000,
         dots: false,
-        loop: true,
+        loop: false,
         nav : true,
         navText : [
             '<i class="bi bi-arrow-left"></i>',

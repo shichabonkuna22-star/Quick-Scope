@@ -1,53 +1,66 @@
 {% extends "base.html" %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Admin Login{% endblock %}
+{% block breadcrumb %}{% endblock %}  {# No breadcrumb on login page #}
 
 {% block content %}
-<div class="auth-page">
-    <div class="auth-container">
-        <div class="auth-header">
-            <h1>Welcome Back</h1>
-            <p>Log in to your QuickScope account</p>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-body p-5">
+                        <h1 class="card-title text-center mb-4">Welcome Back</h1>
+                        <p class="text-center text-muted">Log in to your QuickScope account</p>
+
+                        <!-- Admin-only warning -->
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Customers and Providers:</strong> Please use <a href="{{ url_for('login_google') }}" class="alert-link">Sign in with Google</a> below.
+                            <br>
+                            This form is for <strong>Administrators</strong> only.
+                        </div>
+
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" required placeholder="admin@quickscope.com">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" required placeholder="••••••••">
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="remember" class="form-check-input" id="remember">
+                                    <label class="form-check-label" for="remember">Remember me</label>
+                                </div>
+                                <a href="#" class="text-decoration-none">Forgot password?</a>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 btn-lg">Admin Login</button>
+                        </form>
+
+                        <p class="text-center text-muted mt-3 small">
+                            By logging in, you agree to our <a href="{{ url_for('terms') }}" target="_blank">Terms & Conditions</a>.
+                        </p>
+
+                        <div class="d-flex align-items-center my-4">
+                            <hr class="flex-grow-1">
+                            <span class="px-2 text-muted">or continue with</span>
+                            <hr class="flex-grow-1">
+                        </div>
+
+                        <a href="{{ url_for('login_google') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fab fa-google me-2"></i> Sign in with Google
+                        </a>
+
+                        <p class="text-center mt-4">
+                            New user? <a href="{{ url_for('login_google') }}">Sign up with Google</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <form method="POST" class="auth-form">
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" name="email" required placeholder="you@example.com">
-            </div>
-            
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" required placeholder="••••••••">
-            </div>
-            
-            <div class="form-options">
-                <label class="checkbox-label">
-                    <input type="checkbox" name="remember" id="remember">
-                    <span>Remember me</span>
-                </label>
-                <a href="#" class="text-link">Forgot password?</a>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-block btn-lg">Log In</button>
-        </form>
-        
-        <p class="terms-notice" style="text-align:center; font-size:0.85rem; color:var(--gray); margin:1rem 0;">
-            By logging in, you agree to our <a href="{{ url_for('terms') }}" target="_blank">Terms & Conditions</a>.
-        </p>
-        
-        <div class="auth-divider">
-            <span>or continue with</span>
-        </div>
-        
-        <a href="{{ url_for('login_google') }}" class="btn btn-google btn-block">
-            <i class="fab fa-google"></i>
-            Log in with Google
-        </a>
-        
-        <p class="auth-footer">
-            Don't have an account? <a href="{{ url_for('register') }}">Sign up</a>
-        </p>
     </div>
 </div>
 {% endblock %}

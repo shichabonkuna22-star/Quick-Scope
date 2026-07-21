@@ -1,145 +1,153 @@
 {% extends "base.html" %}
 
-{% block title %}Terms & Conditions - QuickScope{% endblock %}
+{% block title %}Terms & Conditions{% endblock %}
+{% block page_title %}Terms & Conditions{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+<li class="breadcrumb-item active text-primary">Terms</li>
+{% endblock %}
 
 {% block content %}
-<div class="container terms-page">
-    <div class="terms-hero" style="text-align:center; padding:2rem 0;">
-        <h1>Terms & Conditions</h1>
-        <p>Last updated: June 2026</p>
-    </div>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body p-5">
+                        <p class="text-muted">Last updated: June 2026</p>
 
-    <div class="terms-content" style="max-width:800px; margin:0 auto;">
-        <section>
-            <h2>1. Introduction</h2>
-            <p>Welcome to QuickScope ("we", "our", "us"). QuickScope is a South African online marketplace that connects customers ("Customers") with service providers ("Providers") for various local services. By using our platform, you agree to these Terms & Conditions and our Privacy Policy.</p>
-            <p><strong>Purpose:</strong> QuickScope facilitates the discovery, communication, and booking of services between Customers and Providers. We do not provide services ourselves; we are a neutral platform.</p>
-        </section>
+                        <h4>1. Introduction</h4>
+                        <p>Welcome to QuickScope ("we", "our", "us"). QuickScope is a South African online marketplace that connects customers ("Customers") with service providers ("Providers") for various local services. By using our platform, you agree to these Terms & Conditions and our Privacy Policy.</p>
+                        <p><strong>Purpose:</strong> QuickScope facilitates the discovery, communication, and booking of services between Customers and Providers. We do not provide services ourselves; we are a neutral platform.</p>
 
-        <section>
-            <h2>2. Definitions</h2>
-            <ul>
-                <li><strong>"Platform"</strong> – the QuickScope website and mobile applications.</li>
-                <li><strong>"Customer"</strong> – a user seeking to purchase services.</li>
-                <li><strong>"Provider"</strong> – a user offering services for sale.</li>
-                <li><strong>"Booking"</strong> – an agreement between Customer and Provider for a specific service.</li>
-                <li><strong>"Scope Request"</strong> – a quote request initiated by a Customer.</li>
-                <li><strong>"Content"</strong> – text, images, videos, and other materials posted by users.</li>
-            </ul>
-        </section>
+                        <hr>
 
-        <section>
-            <h2>3. User Accounts</h2>
-            <p>You must register to use the Platform. You are responsible for maintaining the confidentiality of your login credentials and for all activities under your account. You must provide accurate and complete information.</p>
-            <p>You agree to notify us immediately of any unauthorized use of your account.</p>
-        </section>
+                        <h4>2. Definitions</h4>
+                        <ul>
+                            <li><strong>"Platform"</strong> – the QuickScope website and mobile applications.</li>
+                            <li><strong>"Customer"</strong> – a user seeking to purchase services.</li>
+                            <li><strong>"Provider"</strong> – a user offering services for sale.</li>
+                            <li><strong>"Booking"</strong> – an agreement between Customer and Provider for a specific service.</li>
+                            <li><strong>"Scope Request"</strong> – a quote request initiated by a Customer.</li>
+                            <li><strong>"Content"</strong> – text, images, videos, and other materials posted by users.</li>
+                        </ul>
 
-        <section>
-            <h2>4. Role-Specific Responsibilities</h2>
-            <h3>For Customers</h3>
-            <ul>
-                <li>Provide clear and accurate descriptions of the work you need.</li>
-                <li>Respond promptly to Provider communications.</li>
-                <li>Honour bookings and payment commitments.</li>
-                <li>Leave honest and constructive reviews.</li>
-            </ul>
-            <h3>For Providers</h3>
-            <ul>
-                <li>List services accurately, including pricing, availability, and qualifications.</li>
-                <li>Deliver services as described and within agreed timelines.</li>
-                <li>Communicate professionally and transparently.</li>
-                <li>Respect customer privacy and property.</li>
-            </ul>
-        </section>
+                        <hr>
 
-        <section>
-            <h2>5. Marketplace & Liability Disclaimer</h2>
-            <p><strong>QuickScope is a marketplace facilitator, not a party to any service agreement.</strong> We do not endorse, guarantee, or assume liability for the quality, safety, legality, or performance of any Provider or service. All transactions are solely between Customers and Providers.</p>
-            <ul>
-                <li><strong>No Warranty:</strong> We provide the Platform "as is" without warranties of any kind.</li>
-                <li><strong>No Liability for Disputes:</strong> We are not responsible for resolving disputes between users. You agree to settle any disagreements directly with the other party.</li>
-                <li><strong>Not a Payment Processor:</strong> Payments are handled offline between users. We do not process payments.</li>
-                <li><strong>User Content:</strong> We do not verify the accuracy of user-generated content; you use it at your own risk.</li>
-            </ul>
-        </section>
+                        <h4>3. User Accounts</h4>
+                        <p>You must register to use the Platform. You are responsible for maintaining the confidentiality of your login credentials and for all activities under your account. You must provide accurate and complete information.</p>
+                        <p>You agree to notify us immediately of any unauthorized use of your account.</p>
 
-        <section>
-            <h2>6. Advice & Safety</h2>
-            <ul>
-                <li><strong>Verify:</strong> Before booking, review Provider ratings and portfolio. Ask questions.</li>
-                <li><strong>Communicate:</strong> Use our messaging or WhatsApp to clarify scope, pricing, and timelines.</li>
-                <li><strong>Meet Safely:</strong> If an in-person service, ensure it is in a safe, public location or with someone else present.</li>
-                <li><strong>Report Issues:</strong> If you encounter fraudulent or dangerous behavior, report it to us immediately.</li>
-            </ul>
-        </section>
+                        <hr>
 
-        <section>
-            <h2>7. Intellectual Property</h2>
-            <p>All Platform content (logos, design, code) is owned by QuickScope. You may not copy, modify, or distribute without our permission. You retain ownership of content you post, but grant us a license to display it on the Platform.</p>
-        </section>
+                        <h4>4. Role-Specific Responsibilities</h4>
+                        <h5>For Customers</h5>
+                        <ul>
+                            <li>Provide clear and accurate descriptions of the work you need.</li>
+                            <li>Respond promptly to Provider communications.</li>
+                            <li>Honour bookings and payment commitments.</li>
+                            <li>Leave honest and constructive reviews.</li>
+                        </ul>
+                        <h5>For Providers</h5>
+                        <ul>
+                            <li>List services accurately, including pricing, availability, and qualifications.</li>
+                            <li>Deliver services as described and within agreed timelines.</li>
+                            <li>Communicate professionally and transparently.</li>
+                            <li>Respect customer privacy and property.</li>
+                        </ul>
 
-        <section>
-            <h2>8. Prohibited Conduct</h2>
-            <p>You may not:</p>
-            <ul>
-                <li>Post false, misleading, or fraudulent information.</li>
-                <li>Infringe on others' rights.</li>
-                <li>Harass, abuse, or threaten other users.</li>
-                <li>Attempt to bypass our security measures.</li>
-                <li>Use the Platform for illegal activities.</li>
-            </ul>
-        </section>
+                        <hr>
 
-        <section>
-            <h2>9. Termination</h2>
-            <p>We may suspend or terminate your account if you violate these Terms, or for any other reason with or without notice. You may delete your account at any time.</p>
-        </section>
+                        <h4>5. Marketplace & Liability Disclaimer</h4>
+                        <p><strong>QuickScope is a marketplace facilitator, not a party to any service agreement.</strong> We do not endorse, guarantee, or assume liability for the quality, safety, legality, or performance of any Provider or service. All transactions are solely between Customers and Providers.</p>
+                        <ul>
+                            <li><strong>No Warranty:</strong> We provide the Platform "as is" without warranties of any kind.</li>
+                            <li><strong>No Liability for Disputes:</strong> We are not responsible for resolving disputes between users. You agree to settle any disagreements directly with the other party.</li>
+                            <li><strong>Not a Payment Processor:</strong> Payments are handled offline between users. We do not process payments.</li>
+                            <li><strong>User Content:</strong> We do not verify the accuracy of user-generated content; you use it at your own risk.</li>
+                        </ul>
 
-        <section>
-            <h2>10. Limitation of Liability</h2>
-            <p><strong>To the fullest extent permitted by law, QuickScope shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from:</strong></p>
-            <ul>
-                <li>Your use or inability to use the Platform;</li>
-                <li>Any conduct or content of any third party on the Platform;</li>
-                <li>Any services obtained through the Platform;</li>
-                <li>Unauthorized access to or alteration of your transmissions or data.</li>
-            </ul>
-            <p>Our total liability to you shall not exceed the amount you paid to us (if any) during the preceding 12 months.</p>
-        </section>
+                        <hr>
 
-        <section>
-            <h2>11. Indemnification</h2>
-            <p>You agree to indemnify and hold QuickScope harmless from any claims, damages, losses, or expenses arising from your use of the Platform or your violation of these Terms.</p>
-        </section>
+                        <h4>6. Advice & Safety</h4>
+                        <ul>
+                            <li><strong>Verify:</strong> Before booking, review Provider ratings and portfolio. Ask questions.</li>
+                            <li><strong>Communicate:</strong> Use our messaging or WhatsApp to clarify scope, pricing, and timelines.</li>
+                            <li><strong>Meet Safely:</strong> If an in-person service, ensure it is in a safe, public location or with someone else present.</li>
+                            <li><strong>Report Issues:</strong> If you encounter fraudulent or dangerous behavior, report it to us immediately.</li>
+                        </ul>
 
-        <section>
-            <h2>12. Privacy Policy</h2>
-            <p><strong>Data Collection:</strong> We collect personal information (name, email, phone, location, and service preferences) to operate the Platform.</p>
-            <p><strong>Use of Data:</strong> We use your data to provide services, communicate with you, improve our platform, and for security.</p>
-            <p><strong>Sharing:</strong> We share your data with other users only as necessary for transactions (e.g., provider sees customer phone number for booking). We do not sell your data.</p>
-            <p><strong>Security:</strong> We implement reasonable security measures, but we cannot guarantee absolute security.</p>
-            <p><strong>Your Rights:</strong> You may access, correct, or delete your data by contacting us.</p>
-            <p>By using the Platform, you consent to our collection and use of your data as described.</p>
-        </section>
+                        <hr>
 
-        <section>
-            <h2>13. Changes to These Terms</h2>
-            <p>We may update these Terms from time to time. We will notify you of material changes via email or on the Platform. Your continued use constitutes acceptance of the updated Terms.</p>
-        </section>
+                        <h4>7. Intellectual Property</h4>
+                        <p>All Platform content (logos, design, code) is owned by QuickScope. You may not copy, modify, or distribute without our permission. You retain ownership of content you post, but grant us a license to display it on the Platform.</p>
 
-        <section>
-            <h2>14. Governing Law</h2>
-            <p>These Terms are governed by the laws of the Republic of South Africa. Any disputes shall be resolved in the courts of Johannesburg.</p>
-        </section>
+                        <hr>
 
-        <section>
-            <h2>15. Contact Us</h2>
-            <p>If you have any questions, please contact us at:</p>
-            <p>Email: <a href="mailto:legal@quickscope.co.za">legal@quickscope.co.za</a></p>
-        </section>
+                        <h4>8. Prohibited Conduct</h4>
+                        <p>You may not:</p>
+                        <ul>
+                            <li>Post false, misleading, or fraudulent information.</li>
+                            <li>Infringe on others' rights.</li>
+                            <li>Harass, abuse, or threaten other users.</li>
+                            <li>Attempt to bypass our security measures.</li>
+                            <li>Use the Platform for illegal activities.</li>
+                        </ul>
 
-        <div class="terms-acknowledgment" style="margin-top:3rem; padding:1.5rem; background:var(--light); border-radius:var(--radius); text-align:center;">
-            <p>By using QuickScope, you acknowledge that you have read, understood, and agree to these Terms & Conditions and our Privacy Policy.</p>
+                        <hr>
+
+                        <h4>9. Termination</h4>
+                        <p>We may suspend or terminate your account if you violate these Terms, or for any other reason with or without notice. You may delete your account at any time.</p>
+
+                        <hr>
+
+                        <h4>10. Limitation of Liability</h4>
+                        <p><strong>To the fullest extent permitted by law, QuickScope shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from:</strong></p>
+                        <ul>
+                            <li>Your use or inability to use the Platform;</li>
+                            <li>Any conduct or content of any third party on the Platform;</li>
+                            <li>Any services obtained through the Platform;</li>
+                            <li>Unauthorized access to or alteration of your transmissions or data.</li>
+                        </ul>
+                        <p>Our total liability to you shall not exceed the amount you paid to us (if any) during the preceding 12 months.</p>
+
+                        <hr>
+
+                        <h4>11. Indemnification</h4>
+                        <p>You agree to indemnify and hold QuickScope harmless from any claims, damages, losses, or expenses arising from your use of the Platform or your violation of these Terms.</p>
+
+                        <hr>
+
+                        <h4>12. Privacy Policy</h4>
+                        <p><strong>Data Collection:</strong> We collect personal information (name, email, phone, location, and service preferences) to operate the Platform.</p>
+                        <p><strong>Use of Data:</strong> We use your data to provide services, communicate with you, improve our platform, and for security.</p>
+                        <p><strong>Sharing:</strong> We share your data with other users only as necessary for transactions (e.g., provider sees customer phone number for booking). We do not sell your data.</p>
+                        <p><strong>Security:</strong> We implement reasonable security measures, but we cannot guarantee absolute security.</p>
+                        <p><strong>Your Rights:</strong> You may access, correct, or delete your data by contacting us.</p>
+                        <p>By using the Platform, you consent to our collection and use of your data as described.</p>
+
+                        <hr>
+
+                        <h4>13. Changes to These Terms</h4>
+                        <p>We may update these Terms from time to time. We will notify you of material changes via email or on the Platform. Your continued use constitutes acceptance of the updated Terms.</p>
+
+                        <hr>
+
+                        <h4>14. Governing Law</h4>
+                        <p>These Terms are governed by the laws of the Republic of South Africa. Any disputes shall be resolved in the courts of Johannesburg.</p>
+
+                        <hr>
+
+                        <h4>15. Contact Us</h4>
+                        <p>If you have any questions, please contact us at:</p>
+                        <p>Email: <a href="mailto:legal@quickscope.co.za">legal@quickscope.co.za</a></p>
+
+                        <div class="alert alert-secondary mt-4">
+                            <p class="mb-0">By using QuickScope, you acknowledge that you have read, understood, and agree to these Terms & Conditions and our Privacy Policy.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

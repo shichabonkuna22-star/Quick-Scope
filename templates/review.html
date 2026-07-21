@@ -1,37 +1,49 @@
 {% extends "base.html" %}
 
 {% block title %}Leave Review{% endblock %}
+{% block page_title %}Leave a Review{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('my_bookings') }}">My Bookings</a></li>
+<li class="breadcrumb-item active text-primary">Review</li>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="form-page narrow">
-        <div class="form-header">
-            <h1>Leave a Review</h1>
-            <p>How was your experience with <strong>{{ booking.provider_booking.full_name }}</strong> for <strong>{{ booking.service.title }}</strong>?</p>
-        </div>
-        
-        <form method="POST" class="review-form">
-            <div class="form-group">
-                <label>Rating</label>
-                <div class="star-rating" id="starRating">
-                    <div class="stars-container">
-                        <span class="star" data-value="1">★</span>
-                        <span class="star" data-value="2">★</span>
-                        <span class="star" data-value="3">★</span>
-                        <span class="star" data-value="4">★</span>
-                        <span class="star" data-value="5">★</span>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-body p-5">
+                        <h4 class="card-title text-center mb-2">How was your experience?</h4>
+                        <p class="text-center text-muted">
+                            With <strong>{{ booking.provider_booking.full_name }}</strong> for <strong>{{ booking.service.title }}</strong>
+                        </p>
+
+                        <form method="POST" class="mt-4">
+                            <div class="mb-4">
+                                <label class="form-label d-block text-center">Rating</label>
+                                <div class="star-rating text-center" id="starRating">
+                                    <div class="stars-container d-inline-block">
+                                        <span class="star fs-1" data-value="1" style="cursor:pointer; color:#ddd; transition:0.2s;">★</span>
+                                        <span class="star fs-1" data-value="2" style="cursor:pointer; color:#ddd; transition:0.2s;">★</span>
+                                        <span class="star fs-1" data-value="3" style="cursor:pointer; color:#ddd; transition:0.2s;">★</span>
+                                        <span class="star fs-1" data-value="4" style="cursor:pointer; color:#ddd; transition:0.2s;">★</span>
+                                        <span class="star fs-1" data-value="5" style="cursor:pointer; color:#ddd; transition:0.2s;">★</span>
+                                    </div>
+                                    <input type="hidden" name="rating" id="ratingInput" value="0" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Your Review</label>
+                                <textarea name="comment" class="form-control" rows="5" placeholder="Share details about your experience..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 btn-lg">Submit Review</button>
+                        </form>
                     </div>
-                    <input type="hidden" name="rating" id="ratingInput" value="0" required>
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label>Your Review</label>
-                <textarea name="comment" rows="5" placeholder="Share details about your experience..."></textarea>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-block btn-lg">Submit Review</button>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -45,9 +57,9 @@
             stars.forEach(star => {
                 const value = parseInt(star.getAttribute('data-value'));
                 if (value <= rating) {
-                    star.classList.add('filled');
+                    star.style.color = '#f39c12';
                 } else {
-                    star.classList.remove('filled');
+                    star.style.color = '#ddd';
                 }
             });
         }

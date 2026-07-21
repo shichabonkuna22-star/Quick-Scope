@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Choose Your Role{% endblock %}
+{% block page_title %}Choose Your Role{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+<li class="breadcrumb-item active text-primary">Role</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-body p-5">
+                        <h1 class="card-title text-center mb-4">Welcome to QuickScope!</h1>
+                        <p class="text-center text-muted">How will you use our platform?</p>
+                        <form method="POST" action="{{ url_for('choose_role') }}">
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <label class="role-option w-100">
+                                        <input type="radio" name="role" value="customer" checked style="display:none;">
+                                        <div class="card h-100 text-center p-3 border-2 rounded-3" style="cursor:pointer; border: 2px solid var(--border);">
+                                            <i class="fas fa-user fa-3x text-primary mb-2"></i>
+                                            <h4>Customer</h4>
+                                            <p class="mb-0 text-muted">I want to hire services</p>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <label class="role-option w-100">
+                                        <input type="radio" name="role" value="provider" style="display:none;">
+                                        <div class="card h-100 text-center p-3 border-2 rounded-3" style="cursor:pointer; border: 2px solid var(--border);">
+                                            <i class="fas fa-briefcase fa-3x text-primary mb-2"></i>
+                                            <h4>Provider</h4>
+                                            <p class="mb-0 text-muted">I offer services</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">Continue</button>
+                        </form>
+                        <p class="text-center text-muted mt-3 small">You can change this later from your profile settings.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.role-option input[type="radio"]').forEach(input => {
+    input.addEventListener('change', function() {
+        document.querySelectorAll('.role-option .card').forEach(card => {
+            card.style.borderColor = 'var(--border)';
+            card.style.background = 'transparent';
+        });
+        if (this.checked) {
+            const card = this.closest('.role-option').querySelector('.card');
+            card.style.borderColor = 'var(--primary)';
+            card.style.background = '#f0f7ff';
+        }
+    });
+});
+</script>
+{% endblock %}

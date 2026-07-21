@@ -1,114 +1,127 @@
 {% extends "base.html" %}
 
 {% block title %}Manage Services{% endblock %}
+{% block page_title %}Manage Services{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active text-primary">Services</li>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Manage Services</h1>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="bg-light p-4 rounded-3 wow fadeInUp" data-wow-delay="0.2s">
+            <!-- Filter Form -->
+            <form method="GET" action="{{ url_for('admin_services') }}" class="row g-3 align-items-end mb-4">
+                <div class="col-md-2">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Active</label>
+                    <select name="active" class="form-select">
+                        <option value="">All</option>
+                        <option value="true" {% if active_filter == 'true' %}selected{% endif %}>Active</option>
+                        <option value="false" {% if active_filter == 'false' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Search (Title)</label>
+                    <input type="text" name="search" class="form-control" placeholder="Service title..." value="{{ search_query or '' }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Per page</label>
+                    <select name="per_page" class="form-select" onchange="this.form.submit()">
+                        <option value="5" {% if per_page == 5 %}selected{% endif %}>5</option>
+                        <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                        <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{{ url_for('admin_services') }}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
 
-    <!-- Filter Form -->
-    <div class="filter-bar">
-        <form method="GET" action="{{ url_for('admin_services') }}" class="filter-form">
-            <div class="filter-group">
-                <label>Category</label>
-                <select name="category">
-                    <option value="">All Categories</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
-                    {% endfor %}
-                </select>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Provider</th>
+                            <th>Category</th>
+                            <th>Active</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for service in services %}
+                        <tr>
+                            <td>{{ service.id }}</td>
+                            <td>{{ service.title }}</td>
+                            <td>{{ service.provider.full_name }}</td>
+                            <td>{{ service.category }}</td>
+                            <td>{{ 'Yes' if service.is_active else 'No' }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin_toggle_service', service_id=service.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-warning">Toggle</button>
+                                </form>
+                                <button onclick="showRemoveModal({{ service.id }}, '{{ service.title }}')" class="btn btn-sm btn-danger">Remove</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <div class="filter-group">
-                <label>Active</label>
-                <select name="active">
-                    <option value="">All</option>
-                    <option value="true" {% if active_filter == 'true' %}selected{% endif %}>Active</option>
-                    <option value="false" {% if active_filter == 'false' %}selected{% endif %}>Inactive</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Search (Title)</label>
-                <input type="text" name="search" placeholder="Service title..." value="{{ search_query or '' }}">
-            </div>
-            <div class="filter-group">
-                <label>&nbsp;</label>
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="{{ url_for('admin_services') }}" class="btn btn-outline">Clear</a>
-            </div>
-            <div class="filter-group">
-                <label>Per page</label>
-                <select name="per_page" onchange="this.form.submit()">
-                    <option value="5" {% if per_page == 5 %}selected{% endif %}>5</option>
-                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
-                    <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
-                </select>
-            </div>
-        </form>
-    </div>
 
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Provider</th>
-                <th>Category</th>
-                <th>Active</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for service in services %}
-            <tr>
-                <td>{{ service.id }}</td>
-                <td>{{ service.title }}</td>
-                <td>{{ service.provider.full_name }}</td>
-                <td>{{ service.category }}</td>
-                <td>{{ 'Yes' if service.is_active else 'No' }}</td>
-                <td>
-                    <form method="POST" action="{{ url_for('admin_toggle_service', service_id=service.id) }}" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-warning">Toggle Active</button>
-                    </form>
-                    <button onclick="showRemoveModal({{ service.id }}, '{{ service.title }}')" class="btn btn-sm btn-danger">Remove</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Pagination -->
-    <div class="pagination">
-        {% if pagination.has_prev %}
-            <a href="{{ url_for('admin_services', page=pagination.prev_num, per_page=per_page, category=category_filter, active=active_filter, search=search_query) }}" class="btn btn-outline">&laquo; Previous</a>
-        {% else %}
-            <span class="btn btn-text disabled">&laquo; Previous</span>
-        {% endif %}
-
-        <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
-
-        {% if pagination.has_next %}
-            <a href="{{ url_for('admin_services', page=pagination.next_num, per_page=per_page, category=category_filter, active=active_filter, search=search_query) }}" class="btn btn-outline">Next &raquo;</a>
-        {% else %}
-            <span class="btn btn-text disabled">Next &raquo;</span>
-        {% endif %}
+            <!-- Pagination -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('admin_services', page=pagination.prev_num, per_page=per_page, category=category_filter, active=active_filter, search=search_query) }}">Previous</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} of {{ pagination.pages }}</span></li>
+                    {% if pagination.has_next %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('admin_services', page=pagination.next_num, per_page=per_page, category=category_filter, active=active_filter, search=search_query) }}">Next</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
     </div>
 </div>
 
-<!-- Remove Service Modal (unchanged) -->
-<div id="removeModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <h2>Remove Service</h2>
-        <p>You are about to remove <strong id="removeServiceTitle"></strong>. Please provide a reason.</p>
-        <form id="removeForm" method="POST" action="">
-            <div class="form-group">
-                <label>Reason for removal</label>
-                <textarea name="reason" rows="3" required placeholder="E.g., Inappropriate content, duplicate, etc."></textarea>
+<!-- Remove Modal -->
+<div class="modal fade" id="removeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Remove Service</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-actions">
-                <button type="submit" class="btn btn-danger">Confirm Remove</button>
-                <button type="button" onclick="closeRemoveModal()" class="btn btn-text">Cancel</button>
-            </div>
-        </form>
+            <form id="removeForm" method="POST" action="">
+                <div class="modal-body">
+                    <p>You are about to remove <strong id="removeServiceTitle"></strong>. Please provide a reason.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <textarea name="reason" class="form-control" rows="3" required placeholder="E.g., Inappropriate content, duplicate, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Remove</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -116,10 +129,8 @@
 function showRemoveModal(serviceId, title) {
     document.getElementById('removeServiceTitle').innerText = title;
     document.getElementById('removeForm').action = '/admin/service/' + serviceId + '/remove';
-    document.getElementById('removeModal').style.display = 'flex';
-}
-function closeRemoveModal() {
-    document.getElementById('removeModal').style.display = 'none';
+    var modal = new bootstrap.Modal(document.getElementById('removeModal'));
+    modal.show();
 }
 </script>
 {% endblock %}

@@ -1,182 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}QuickScope{% endblock %} - Local Services Marketplace</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="utf-8">
+    <title>{% block title %}QuickScope – Find & Book Local Services{% endblock %}</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="QuickScope, service marketplace, local providers" name="keywords">
+    <meta content="QuickScope connects you with trusted local service providers in South Africa." name="description">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Edu+TAS+Beginner:wght@400..700&family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+    <!-- Icon Font Stylesheet -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='lib/animate/animate.min.css') }}">
+    <link href="{{ url_for('static', filename='lib/owlcarousel/assets/owl.carousel.min.css') }}" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
-   <nav class="navbar">
-    <div class="nav-container">
-        <a href="{{ url_for('index') }}" class="logo">
-            <i class="fas fa-bullseye"></i>
-            <span>QuickScope</span>
-        </a>
-        
-        <div class="nav-search">
-            <form action="{{ url_for('services_page') }}" method="GET">
-                <input type="text" name="q" placeholder="Search services..." value="{{ request.args.get('q', '') }}">
-                <button type="submit"><i class="fas fa-search"></i></button>
-            </form>
+
+    <!-- Spinner Start -->
+    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Loading...</span>
         </div>
-        
-        <div class="nav-links">
-            <a href="{{ url_for('about') }}" class="nav-link">About</a>
-            <a href="{{ url_for('services_page') }}" class="nav-link">Services</a>
-            {% if current_user.is_authenticated %}
-                <!-- Notifications -->
-                <div class="nav-dropdown" style="position:relative;">
-                    <a href="{{ url_for('notifications') }}" class="nav-link" style="position:relative;">
-                        <i class="fas fa-bell"></i>
-                        {% if unread_notifications > 0 %}
-                            <span class="notification-badge">{{ unread_notifications }}</span>
-                        {% endif %}
-                    </a>
-                </div>
-                <!-- Chat with conversations -->
-                <a href="{{ url_for('chat_conversations') }}" class="nav-link" style="position:relative;">
-                    <i class="fas fa-comment"></i>
-                    {% if chat_unread > 0 %}
-                        <span class="notification-badge" style="background:#e74c3c; color:white; font-size:10px; padding:0 4px; border-radius:50%; margin-left:2px;">{{ chat_unread }}</span>
-                    {% endif %}
+    </div>
+    <!-- Spinner End -->
+
+    <!-- Navbar & Hero Start -->
+    <div class="container-fluid header-top">
+        <div class="container d-flex align-items-center">
+            <div class="d-flex align-items-center h-100">
+                <a href="{{ url_for('index') }}" class="navbar-brand" style="height: 125px;">
+                    <h1 class="text-primary mb-0"><i class="fas fa-search-location me-2"></i>QuickScope</h1>
                 </a>
-                <!-- Contact Admin -->
-                <a href="{{ url_for('contact_admin') }}" class="nav-link">
-                    <i class="fas fa-headset"></i> Contact Admin
-                </a>
-                <!-- Existing nav links -->
-                {% if current_user.role.value == 'provider' %}
-                    <a href="{{ url_for('provider_dashboard') }}" class="nav-link">
-                        <i class="fas fa-chart-line"></i> Dashboard
-                    </a>
-                    <a href="{{ url_for('create_service') }}" class="nav-link">
-                        <i class="fas fa-plus-circle"></i> List Service
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('my_bookings') }}" class="nav-link">
-                        <i class="fas fa-calendar-check"></i> My Bookings
-                    </a>
-                {% endif %}
-                <!-- Admin Dashboard Link -->
-                {% if current_user.role.value == 'admin' %}
-                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
-                        <i class="fas fa-shield-alt"></i> Admin
-                    </a>
-                {% endif %}
-                <div class="nav-dropdown">
-                    <button class="nav-user">
-                        {% if current_user.avatar_url %}
-                            <img src="{{ current_user.avatar_url }}" alt="Avatar" class="avatar-small">
-                        {% else %}
-                            <div class="avatar-placeholder">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>
-                        {% endif %}
-                        <span>{{ current_user.first_name }}</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a>
-                        <a href="{{ url_for('my_bookings') }}"><i class="fas fa-list"></i> My Bookings</a>
-                        <a href="{{ url_for('notifications') }}"><i class="fas fa-bell"></i> Notifications</a>
-                        <a href="{{ url_for('chat_conversations') }}"><i class="fas fa-comment"></i> Chat</a>
-                        <a href="{{ url_for('contact_admin') }}"><i class="fas fa-headset"></i> Contact Admin</a>
-                        <hr>
-                        <form action="{{ url_for('switch_role') }}" method="POST" style="display:inline;">
-                            <input type="hidden" name="role" value="{{ 'provider' if current_user.role.value == 'customer' else 'customer' }}">
-                            <button type="submit" class="dropdown-item">
-                                <i class="fas fa-exchange-alt"></i> Switch to {{ 'Provider' if current_user.role.value == 'customer' else 'Customer' }} Mode
-                            </button>
-                        </form>
-                        <hr>
-                        <a href="{{ url_for('logout') }}" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+            <div class="w-100 h-100">
+                <div class="topbar px-0 py-2 d-none d-lg-block" style="height: 45px;">
+                    <div class="row gx-0 align-items-center">
+                        <div class="col-lg-8 text-center text-lg-center mb-lg-0">
+                            <div class="d-flex flex-wrap">
+                                <div class="border-end border-primary pe-3">
+                                    <a href="#" class="text-muted small"><i class="fas fa-map-marker-alt text-primary me-2"></i>Find Services Near You</a>
+                                </div>
+                                <div class="ps-3">
+                                    <a href="mailto:hello@quickscope.com" class="text-muted small"><i class="fas fa-envelope text-primary me-2"></i>hello@quickscope.com</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 text-center text-lg-end">
+                            <div class="d-flex justify-content-end">
+                                <div class="d-flex border-end border-primary pe-3">
+                                    <a class="btn p-0 text-primary me-3" href="#"><i class="fab fa-facebook-f"></i></a>
+                                    <a class="btn p-0 text-primary me-3" href="#"><i class="fab fa-twitter"></i></a>
+                                    <a class="btn p-0 text-primary me-3" href="#"><i class="fab fa-instagram"></i></a>
+                                    <a class="btn p-0 text-primary me-0" href="#"><i class="fab fa-linkedin-in"></i></a>
+                                </div>
+                                <div class="dropdown ms-3">
+                                    <a href="#" class="dropdown-toggle text-white" data-bs-toggle="dropdown"><small class="text-body"><i class="fas fa-globe-europe text-primary me-2"></i> English</small></a>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item">English</a>
+                                        <a href="#" class="dropdown-item">Afrikaans</a>
+                                        <a href="#" class="dropdown-item">Zulu</a>
+                                        <a href="#" class="dropdown-item">Xhosa</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            {% else %}
-                <a href="{{ url_for('login') }}" class="nav-link">Log In</a>
-                <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
-            {% endif %}
-        </div>
-        
-        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation">
-            <i class="fas fa-bars"></i>
-        </button>
-    </div>
-</nav>
-    
-    <div class="mobile-menu" id="mobileMenu">
-        <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
-        <a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i> About</a>
-        <a href="{{ url_for('services_page') }}"><i class="fas fa-list"></i> All Services</a>
-        {% if current_user.is_authenticated %}
-            <a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a>
-            <a href="{{ url_for('my_bookings') }}"><i class="fas fa-calendar-check"></i> My Bookings</a>
-            <a href="{{ url_for('chat_conversations') }}"><i class="fas fa-comment"></i> Chat</a>
-            <a href="{{ url_for('contact_admin') }}"><i class="fas fa-headset"></i> Contact Admin</a>
-            <a href="{{ url_for('notifications') }}"><i class="fas fa-bell"></i> Notifications</a>
-            {% if current_user.role.value == 'provider' %}
-                <a href="{{ url_for('provider_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a>
-                <a href="{{ url_for('create_service') }}"><i class="fas fa-plus-circle"></i> List Service</a>
-                <a href="{{ url_for('manage_gallery') }}"><i class="fas fa-images"></i> Gallery</a>
-            {% endif %}
-            {% if current_user.role.value == 'admin' %}
-                <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-shield-alt"></i> Admin</a>
-            {% endif %}
-            <hr>
-            <a href="{{ url_for('logout') }}" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        {% else %}
-            <a href="{{ url_for('login') }}" class="btn btn-primary btn-block">Log In</a>
-            <a href="{{ url_for('register') }}" class="btn btn-outline btn-block">Create Account</a>
-        {% endif %}
-    </div>
+                <div class="nav-bar px-0 py-lg-0" style="height: 80px;">
+                    <nav class="navbar navbar-expand-lg navbar-light d-flex justify-content-lg-end">
+                        <a href="{{ url_for('index') }}" class="navbar-brand-2">
+                            <h1 class="text-primary mb-0"><i class="fas fa-search-location me-2"></i>QuickScope</h1>
+                        </a>  
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                            <span class="fa fa-bars"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarCollapse">
+                            <div class="navbar-nav mx-0 mx-lg-auto bg-white">
+                                <!-- Main links -->
+                                <a href="{{ url_for('index') }}" class="nav-item nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a>
 
+                                <!-- About: show only if NOT logged in -->
+                                {% if not current_user.is_authenticated %}
+                                    <a href="{{ url_for('about') }}" class="nav-item nav-link {% if request.endpoint == 'about' %}active{% endif %}">About</a>
+                                {% endif %}
+
+                                <a href="{{ url_for('services_page') }}" class="nav-item nav-link {% if request.endpoint == 'services_page' %}active{% endif %}">Services</a>
+
+                                <!-- Pages Dropdown -->
+                                <div class="nav-item dropdown">
+                                    <a href="#" class="nav-link" data-bs-toggle="dropdown">
+                                        <span class="dropdown-toggle">Pages</span>
+                                    </a>
+                                    <div class="dropdown-menu">
+                                        <a href="{{ url_for('services_page') }}" class="dropdown-item">Our Providers</a>
+                                        {% if current_user.is_authenticated and current_user.role.value == 'provider' %}
+                                            <a href="{{ url_for('manage_gallery') }}" class="dropdown-item">Gallery</a>
+                                        {% endif %}
+                                        <a href="#" class="dropdown-item">How It Works</a>
+                                        <a href="#" class="dropdown-item">404 Page</a>
+                                    </div>
+                                </div>
+
+                                <!-- For logged-in users: additional links -->
+                                {% if current_user.is_authenticated %}
+                                    <!-- My Bookings -->
+                                    <a href="{{ url_for('my_bookings') }}" class="nav-item nav-link {% if request.endpoint == 'my_bookings' %}active{% endif %}">
+                                        <i class="fas fa-calendar-check"></i> My Bookings
+                                    </a>
+
+                                    <!-- Notifications with badge -->
+                                    <a href="{{ url_for('notifications') }}" class="nav-item nav-link position-relative {% if request.endpoint == 'notifications' %}active{% endif %}">
+                                        <i class="fas fa-bell"></i>
+                                        {% if unread_notifications > 0 %}
+                                            <span class="badge bg-danger rounded-pill" style="font-size: 0.6rem; position: absolute; top: -5px; right: -10px;">{{ unread_notifications }}</span>
+                                        {% endif %}
+                                    </a>
+
+                                    <!-- Provider Dashboard (only for providers) -->
+                                    {% if current_user.role.value == 'provider' %}
+                                        <a href="{{ url_for('provider_dashboard') }}" class="nav-item nav-link {% if request.endpoint == 'provider_dashboard' %}active{% endif %}">
+                                            <i class="fas fa-chart-line"></i> Dashboard
+                                        </a>
+                                    {% endif %}
+
+                                    <!-- List Your Service button (only for providers) -->
+                                    <div class="nav-btn ps-3">
+                                        {% if current_user.role.value == 'provider' %}
+                                            <a href="{{ url_for('create_service') }}" class="btn btn-primary py-2 px-4 ms-0 ms-lg-3">List Your Service</a>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- User dropdown (Profile, Chat, Contact Admin, Switch Role, Admin Panel, Logout) -->
+                                    <div class="nav-item dropdown">
+                                        <a href="#" class="nav-link" data-bs-toggle="dropdown" style="display:flex; align-items:center; gap:8px;">
+                                            {% if current_user.avatar_url %}
+                                                <img src="{{ current_user.avatar_url }}" alt="Avatar" style="width:28px; height:28px; border-radius:50%;">
+                                            {% else %}
+                                                <div class="avatar-placeholder" style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:12px;">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>
+                                            {% endif %}
+                                            <span>{{ current_user.first_name }}</span>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </a>
+                                        <div class="dropdown-menu">
+                                            <a href="{{ url_for('profile') }}" class="dropdown-item"><i class="fas fa-user"></i> Profile</a>
+                                            <!-- Chat and Contact Admin inside the dropdown -->
+                                            <a href="{{ url_for('chat_conversations') }}" class="dropdown-item">
+                                                <i class="fas fa-comment"></i> Chat
+                                                {% if chat_unread > 0 %}
+                                                    <span class="badge bg-danger">{{ chat_unread }}</span>
+                                                {% endif %}
+                                            </a>
+                                            <a href="{{ url_for('contact_admin') }}" class="dropdown-item"><i class="fas fa-headset"></i> Contact Admin</a>
+                                            {% if current_user.role.value == 'admin' %}
+                                                <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item"><i class="fas fa-shield-alt"></i> Admin Panel</a>
+                                            {% endif %}
+                                            <hr>
+                                            <form action="{{ url_for('switch_role') }}" method="POST" style="display:inline;">
+                                                <input type="hidden" name="role" value="{{ 'provider' if current_user.role.value == 'customer' else 'customer' }}">
+                                                <button type="submit" class="dropdown-item"><i class="fas fa-exchange-alt"></i> Switch to {{ 'Provider' if current_user.role.value == 'customer' else 'Customer' }}</button>
+                                            </form>
+                                            <hr>
+                                            <a href="{{ url_for('logout') }}" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                                        </div>
+                                    </div>
+
+                                {% else %}
+                                    <!-- Not logged in: show sign in and admin login -->
+                                    <a href="{{ url_for('login') }}" class="nav-item nav-link">Admin Login</a>
+                                    <div class="nav-btn ps-3">
+                                        <a href="{{ url_for('login_google') }}" class="btn btn-primary py-2 px-4 ms-0 ms-lg-3"><i class="fab fa-google"></i> Sign in</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Navbar & Hero End -->
+
+    <!-- Header / Breadcrumb Start -->
+    {% block breadcrumb %}
+    <div class="container-fluid bg-breadcrumb">
+        <div class="container text-center py-5" style="max-width: 900px;">
+            <h4 class="text-white display-4 mb-4 wow fadeInDown" data-wow-delay="0.1s">{% block page_title %}QuickScope{% endblock %}</h4>
+            <ol class="breadcrumb d-flex justify-content-center mb-0 wow fadeInDown" data-wow-delay="0.3s">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                {% block breadcrumb_items %}
+                <li class="breadcrumb-item active text-primary">Page</li>
+                {% endblock %}
+            </ol>    
+        </div>
+    </div>
+    {% endblock %}
+    <!-- Header End -->
+
+    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="flash-container">
+            <div class="container mt-3">
                 {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">
-                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'error' else 'info-circle' }}"></i>
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
                         {{ message }}
-                        <button onclick="this.parentElement.remove()" class="flash-close"><i class="fas fa-times"></i></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             </div>
         {% endif %}
     {% endwith %}
 
+    <!-- Main Content -->
     <main>
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-brand">
-                <i class="fas fa-bullseye"></i>
-                <span>QuickScope</span>
-                <p>Connecting you with trusted local services in South Africa.</p>
-                <div class="footer-social">
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-whatsapp"></i></a>
+    <!-- Footer Start -->
+    <div class="container-fluid footer bg-dark py-5 wow fadeIn" data-wow-delay="0.2s">
+        <div class="container py-5">
+            <div class="row g-5 mb-5 align-items-center">
+                <div class="col-lg-7">
+                    <div class="position-relative mx-auto">
+                        <input class="form-control w-100 py-3 ps-4 pe-5" type="text" placeholder="Email address to Subscribe">
+                        <button type="button" class="btn btn-primary position-absolute top-0 end-0 py-2 px-4 mt-2 me-2">Subscribe</button>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="d-flex align-items-center justify-content-center justify-content-lg-end">
+                        <a class="btn btn-light btn-md-square me-3" href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a class="btn btn-light btn-md-square me-3" href="#"><i class="fab fa-twitter"></i></a>
+                        <a class="btn btn-light btn-md-square me-3" href="#"><i class="fab fa-instagram"></i></a>
+                        <a class="btn btn-light btn-md-square me-0" href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
                 </div>
             </div>
-            <div class="footer-links">
-                <a href="{{ url_for('about') }}">About</a>
-                <a href="{{ url_for('services_page') }}">Services</a>
-                <a href="{{ url_for('terms') }}">Terms & Conditions</a>
-                <a href="{{ url_for('terms') }}#privacy">Privacy</a>
-                <a href="#">Contact</a>
+            <div class="row g-5">
+                <div class="col-md-6 col-lg-6 col-xl-3">
+                    <div class="footer-item d-flex flex-column">
+                        <h3 class="text-white mb-4"><i class="fas fa-search-location text-primary me-3"></i>QuickScope</h3>
+                        <p class="mb-3">Connecting you with trusted local service providers. Simple, fast, and reliable.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-6 col-xl-3">
+                    <div class="footer-item d-flex flex-column">
+                        <h4 class="text-white mb-4">Quick Links</h4>
+                        <a href="{{ url_for('index') }}">Home</a>
+                        <a href="{{ url_for('about') }}">About Us</a>
+                        <a href="{{ url_for('services_page') }}">Services</a>
+                        <a href="{{ url_for('terms') }}">Terms & Conditions</a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-6 col-xl-3">
+                    <div class="footer-item d-flex flex-column">
+                        <h4 class="text-white mb-4">Service Categories</h4>
+                        <a href="{{ url_for('services_page') }}?category=Cleaning">Cleaning</a>
+                        <a href="{{ url_for('services_page') }}?category=Repairs">Repairs</a>
+                        <a href="{{ url_for('services_page') }}?category=Gardening">Gardening</a>
+                        <a href="{{ url_for('services_page') }}?category=Tutoring">Tutoring</a>
+                        <a href="{{ url_for('services_page') }}?category=Photography">Photography</a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-6 col-xl-3">
+                    <div class="footer-item d-flex flex-column">
+                        <h4 class="text-white mb-4">Contact Info</h4>
+                        <a href="#"><i class="fa fa-map-marker-alt text-primary me-2"></i> 123 Main St, Johannesburg, SA</a>
+                        <a href="mailto:info@quickscope.com"><i class="fas fa-envelope text-primary me-2"></i> info@quickscope.com</a>
+                        <a href="mailto:support@quickscope.com"><i class="fas fa-envelope text-primary me-2"></i> support@quickscope.com</a>
+                        <a href="tel:+27123456789"><i class="fas fa-phone text-primary me-2"></i> +27 12 345 6789</a>
+                        <a href="tel:+27123456789" class="mb-3"><i class="fas fa-print text-primary me-2"></i> +27 12 345 6789</a>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 QuickScope. All rights reserved. South Africa</p>
-        </div>
-    </footer>
+    </div>
+    <!-- Footer End -->
 
+    <!-- Copyright Start -->
+    <div class="container-fluid copyright py-4">
+        <div class="container">
+            <div class="row g-4 align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-md-0">
+                    <span class="text-body"><a href="#" class="border-bottom text-white"><i class="fas fa-copyright text-light me-2"></i>QuickScope</a>, All rights reserved.</span>
+                </div>
+                <div class="col-md-6 text-center text-md-end text-body">
+                   Frontend Designed By <a class="border-bottom text-white" href="https://htmlcodex.com">HTML Codex</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Copyright End -->
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-primary btn-lg-square back-to-top"><i class="fa fa-arrow-up"></i></a>   
+
+    <!-- JavaScript Libraries -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='lib/wow/wow.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/easing/easing.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/waypoints/waypoints.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/owlcarousel/owl.carousel.min.js') }}"></script>
+
+    <!-- Template Javascript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

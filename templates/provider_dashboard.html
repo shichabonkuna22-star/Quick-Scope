@@ -1,107 +1,157 @@
 {% extends "base.html" %}
 
 {% block title %}Provider Dashboard{% endblock %}
+{% block page_title %}Provider Dashboard{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+<li class="breadcrumb-item active text-primary">Dashboard</li>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="dashboard-header">
-        <h1>Provider Dashboard</h1>
-        <div>
-            <a href="{{ url_for('create_service') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> New Listing
-            </a>
-            <a href="{{ url_for('manage_gallery') }}" class="btn btn-outline">
-                <i class="fas fa-images"></i> Manage Gallery
-            </a>
-        </div>
-    </div>
-    
-    <div class="dashboard-stats">
-        <div class="stat-card">
-            <i class="fas fa-list"></i>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Welcome, {{ current_user.full_name }}</h2>
             <div>
-                <span class="stat-number">{{ services|length }}</span>
-                <span class="stat-label">Services</span>
+                <a href="{{ url_for('create_service') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New Listing
+                </a>
+                <a href="{{ url_for('manage_gallery') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-images"></i> Gallery
+                </a>
             </div>
         </div>
-        <div class="stat-card">
-            <i class="fas fa-clipboard-list"></i>
-            <div>
-                <span class="stat-number">{{ pending_scopes|length }}</span>
-                <span class="stat-label">Pending Scopes</span>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-list fa-3x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">{{ services|length }}</h2>
+                            <p class="mb-0">Services</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-warning text-dark h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-clipboard-list fa-3x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">{{ pending_scopes|length }}</h2>
+                            <p class="mb-0">Pending Scopes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-star fa-3x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">{{ "%.1f"|format(current_user.average_rating) }}</h2>
+                            <p class="mb-0">Rating</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="stat-card">
-            <i class="fas fa-star"></i>
-            <div>
-                <span class="stat-number">{{ "%.1f"|format(current_user.average_rating) }}</span>
-                <span class="stat-label">Rating</span>
+
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>My Services</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if services %}
+                            <div class="list-group">
+                                {% for service in services %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ service.title }}</h6>
+                                        <span class="badge bg-{{ 'success' if service.is_active else 'secondary' }}">
+                                            {{ 'Active' if service.is_active else 'Inactive' }}
+                                        </span>
+                                        <small class="text-muted ms-2">{{ currency }}{{ "%.2f"|format(service.price_min or 0) }}</small>
+                                    </div>
+                                    <div>
+                                        <a href="{{ url_for('service_detail', service_id=service.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                                        <a href="{{ url_for('edit_service', service_id=service.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No services listed yet. <a href="{{ url_for('create_service') }}">Create your first listing</a>.</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="dashboard-grid">
-        <div class="dashboard-section">
-            <h2><i class="fas fa-briefcase"></i> My Services</h2>
-            {% if services %}
-                <div class="dashboard-list">
-                    {% for service in services %}
-                    <div class="dashboard-item">
-                        <div class="item-info">
-                            <h4>{{ service.title }}</h4>
-                            <span class="badge {{ 'badge-success' if service.is_active else 'badge-secondary' }}">
-                                {{ 'Active' if service.is_active else 'Inactive' }}
-                            </span>
-                            <span class="service-price-small">{{ currency }}{{ "%.2f"|format(service.price_min or 0) }}</span>
-                        </div>
-                        <div class="item-actions">
-                            <a href="{{ url_for('service_detail', service_id=service.id) }}" class="btn btn-sm btn-text">View</a>
-                            <a href="{{ url_for('edit_service', service_id=service.id) }}" class="btn btn-sm btn-text">Edit</a>
-                        </div>
+
+            <div class="col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Pending Scope Requests</h5>
                     </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-muted">No services listed yet. <a href="{{ url_for('create_service') }}">Create your first listing</a>.</p>
-            {% endif %}
-        </div>
-        
-        <div class="dashboard-section">
-            <h2><i class="fas fa-bell"></i> Pending Scope Requests</h2>
-            {% if pending_scopes %}
-                <div class="dashboard-list">
-                    {% for scope in pending_scopes %}
-                    <div class="dashboard-item urgent">
-                        <div class="item-info">
-                            <h4>{{ scope.service.title }}</h4>
-                            <p>{{ scope.scope_customer.full_name }} - {{ format_date(scope.created_at) }}</p>
-                        </div>
-                        <a href="{{ url_for('my_bookings') }}" class="btn btn-sm btn-primary">Respond</a>
+                    <div class="card-body">
+                        {% if pending_scopes %}
+                            <div class="list-group">
+                                {% for scope in pending_scopes %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ scope.service.title }}</h6>
+                                        <small class="text-muted">{{ scope.scope_customer.full_name }} – {{ format_date(scope.created_at) }}</small>
+                                    </div>
+                                    <a href="{{ url_for('my_bookings') }}" class="btn btn-primary btn-sm">Respond</a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No pending scope requests.</p>
+                        {% endif %}
                     </div>
-                    {% endfor %}
                 </div>
-            {% else %}
-                <p class="text-muted">No pending scope requests.</p>
-            {% endif %}
-        </div>
-        
-        <div class="dashboard-section full-width">
-            <h2><i class="fas fa-calendar"></i> Active Bookings</h2>
-            {% if active_bookings %}
-                <div class="bookings-list compact">
-                    {% for booking in active_bookings %}
-                    <div class="booking-row">
-                        <span class="booking-service">{{ booking.service.title }}</span>
-                        <span class="booking-customer">{{ booking.customer.full_name }}</span>
-                        <span class="booking-status status-{{ booking.status.value }}">{{ booking.status.value.title() }}</span>
-                        <span class="booking-date">{{ format_date(booking.scheduled_date) if booking.scheduled_date else 'TBD' }}</span>
-                        <span class="booking-price">{{ currency }}{{ "%.2f"|format(booking.agreed_price or 0) }}</span>
+            </div>
+
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-calendar me-2"></i>Active Bookings</h5>
                     </div>
-                    {% endfor %}
+                    <div class="card-body">
+                        {% if active_bookings %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Service</th>
+                                            <th>Customer</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for booking in active_bookings %}
+                                        <tr>
+                                            <td>{{ booking.service.title }}</td>
+                                            <td>{{ booking.customer.full_name }}</td>
+                                            <td><span class="badge bg-{{ 'secondary' if booking.status.value == 'pending' else 'primary' if booking.status.value == 'confirmed' else 'warning' if booking.status.value == 'in_progress' else 'success' if booking.status.value == 'completed' else 'danger' }}">{{ booking.status.value.title() }}</span></td>
+                                            <td>{{ format_date(booking.scheduled_date) if booking.scheduled_date else 'TBD' }}</td>
+                                            <td>{{ currency }}{{ "%.2f"|format(booking.agreed_price or 0) }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No active bookings.</p>
+                        {% endif %}
+                    </div>
                 </div>
-            {% else %}
-                <p class="text-muted">No active bookings.</p>
-            {% endif %}
+            </div>
         </div>
     </div>
 </div>

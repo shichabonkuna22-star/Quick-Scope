@@ -1,30 +1,57 @@
 {% extends "base.html" %}
-{% block title %}My Gallery{% endblock %}
-{% block content %}
-<div class="container">
-    <h1>Work Gallery</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label>Upload Image</label>
-            <input type="file" name="gallery_image" accept="image/*" required>
-        </div>
-        <div class="form-group">
-            <label>Caption (optional)</label>
-            <input type="text" name="caption" placeholder="Describe this work...">
-        </div>
-        <button type="submit" class="btn btn-primary">Add to Gallery</button>
-    </form>
 
-    <div class="gallery-grid">
-        {% for img in images %}
-        <div class="gallery-item">
-            <img src="{{ url_for('static', filename='uploads/' + img.filename) }}" alt="{{ img.caption }}">
-            <p>{{ img.caption or 'No caption' }}</p>
-            <form method="POST" action="{{ url_for('delete_gallery_image', image_id=img.id) }}" onsubmit="return confirm('Delete this image?');">
-                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-            </form>
+{% block title %}My Gallery{% endblock %}
+{% block page_title %}Work Gallery{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('provider_dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active text-primary">Gallery</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-6 mx-auto">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title">Upload New Image</h4>
+                        <form method="POST" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label class="form-label">Image</label>
+                                <input type="file" name="gallery_image" class="form-control" accept="image/*" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Caption (optional)</label>
+                                <input type="text" name="caption" class="form-control" placeholder="Describe this work...">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add to Gallery</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% endfor %}
+
+        <h2 class="mt-4">Your Images</h2>
+        {% if images %}
+            <div class="row g-4">
+                {% for img in images %}
+                <div class="col-md-4 col-lg-3">
+                    <div class="card h-100 shadow-sm">
+                        <img src="{{ url_for('static', filename='uploads/' + img.filename) }}" class="card-img-top" alt="{{ img.caption or 'Work sample' }}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <p class="card-text">{{ img.caption or 'No caption' }}</p>
+                            <form method="POST" action="{{ url_for('delete_gallery_image', image_id=img.id) }}" onsubmit="return confirm('Delete this image?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">No images yet. Upload your work samples.</div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

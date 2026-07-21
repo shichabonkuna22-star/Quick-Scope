@@ -9,3 +9,5 @@ email-validator==2.1.1
 pytz==2024.1
 psycopg2-binary>=2.9.11
 gunicorn==22.0.0
+python-dotenv==1.2.2
+cloudinary==1.36.0

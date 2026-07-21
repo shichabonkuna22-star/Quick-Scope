@@ -1,38 +1,48 @@
 {% extends "base.html" %}
 
 {% block title %}Request Scope{% endblock %}
+{% block page_title %}Request a Scope{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('service_detail', service_id=service.id) }}">{{ service.title }}</a></li>
+<li class="breadcrumb-item active text-primary">Request Scope</li>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="form-page narrow">
-        <div class="form-header">
-            <h1>Request a Scope</h1>
-            <p>Describe your needs for <strong>{{ service.title }}</strong> by {{ service.provider.full_name }}</p>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-body p-5">
+                        <h4 class="card-title text-center mb-2">Request a Scope</h4>
+                        <p class="text-center text-muted">Describe your needs for <strong>{{ service.title }}</strong> by {{ service.provider.full_name }}</p>
+
+                        <form method="POST" class="mt-4">
+                            <div class="mb-3">
+                                <label class="form-label">Describe your task <span class="text-danger">*</span></label>
+                                <textarea name="description" class="form-control" rows="6" required placeholder="Be specific about what you need done. Include details like size, condition, materials, deadlines, etc."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Your Location</label>
+                                <input type="text" name="location" class="form-control" placeholder="Where will the service take place?">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Preferred Date & Time</label>
+                                <input type="datetime-local" name="preferred_date" class="form-control">
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                The provider will review your request and respond with an estimated cost and timeframe.
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 btn-lg">Send Request</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <form method="POST" class="scope-form">
-            <div class="form-group">
-                <label>Describe your task *</label>
-                <textarea name="description" rows="6" required placeholder="Be specific about what you need done. Include details like size, condition, materials, deadlines, etc."></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label>Your Location</label>
-                <input type="text" name="location" placeholder="Where will the service take place?">
-            </div>
-            
-            <div class="form-group">
-                <label>Preferred Date & Time</label>
-                <input type="datetime-local" name="preferred_date">
-            </div>
-            
-            <div class="info-box" style="background: #eff6ff; padding:1rem; border-radius:var(--radius); margin:1rem 0;">
-                <i class="fas fa-info-circle" style="color:var(--primary);"></i>
-                <p>The provider will review your request and respond with an estimated cost and timeframe.</p>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-block btn-lg">Send Request</button>
-        </form>
     </div>
 </div>
 {% endblock %}

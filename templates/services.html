@@ -1,113 +1,132 @@
 {% extends "base.html" %}
 
 {% block title %}All Services - QuickScope{% endblock %}
+{% block page_title %}All Services{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+<li class="breadcrumb-item active text-primary">Services</li>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>All Services</h1>
-    
-    <div class="filter-bar animate-on-scroll">
-        <form method="GET" action="{{ url_for('services_page') }}" class="filter-form">
-            <div class="filter-group">
-                <label>Category</label>
-                <select name="category">
-                    <option value="">All Categories</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Location</label>
-                <input type="text" name="location" placeholder="e.g., Johannesburg" value="{{ selected_location or '' }}">
-            </div>
-            <div class="filter-group">
-                <label>Search</label>
-                <input type="text" name="q" placeholder="Search services..." value="{{ search_query or '' }}">
-            </div>
-            <div class="filter-group">
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-                <a href="{{ url_for('services_page') }}" class="btn btn-outline">Clear</a>
-            </div>
-        </form>
-    </div>
-
-    {% if services %}
-        <div class="services-grid">
-            {% for service in services %}
-            <div class="service-card animate-on-scroll delay-{{ loop.index0 % 6 + 1 }}">
-                <div class="service-image">
-                    {% if service.image_filename %}
-                        <img src="{{ get_image_url(service.image_filename) }}" alt="{{ service.title }}">
-                    {% else %}
-                        <div class="service-image-placeholder">
-                            <i class="fas fa-tools"></i>
-                        </div>
-                    {% endif %}
-                    <div class="service-badge">{{ service.category }}</div>
-                </div>
-                <div class="service-content">
-                    <h3>{{ service.title }}</h3>
-                    <p class="service-description">{{ service.description[:100] }}{% if service.description|length > 100 %}...{% endif %}</p>
-                    
-                    <div class="service-meta">
-                        <span class="service-location"><i class="fas fa-map-marker-alt"></i> {{ service.location or 'Remote' }}</span>
-                        <span class="service-price">
-                            {% if service.price_type == 'quote' %}
-                                Quote based
-                            {% elif service.price_min and service.price_max %}
-                                {{ currency }} {{ "%.0f"|format(service.price_min) }} - {{ currency }}{{ "%.0f"|format(service.price_max) }}
-                            {% elif service.price_min %}
-                                From {{ currency }}{{ "%.0f"|format(service.price_min) }}
-                            {% else %}
-                                Contact for price
-                            {% endif %}
-                        </span>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <!-- Filter Form -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('services_page') }}" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Category</label>
+                        <select name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    
-                    <div class="service-provider">
-                        {% if service.provider.avatar_url %}
-                            <img src="{{ service.provider.avatar_url }}" alt="" class="provider-avatar">
-                        {% else %}
-                            <div class="provider-avatar-placeholder">{{ service.provider.first_name[0] }}</div>
-                        {% endif %}
-                        <div class="provider-info">
-                            <span class="provider-name">{{ service.provider.full_name }}</span>
-                            <div class="provider-rating">
-                                <i class="fas fa-star"></i>
-                                <span>{{ "%.1f"|format(service.provider.average_rating) }} ({{ service.provider.review_count }})</span>
+                    <div class="col-md-3">
+                        <label class="form-label">Location</label>
+                        <input type="text" name="location" class="form-control" placeholder="e.g., Johannesburg" value="{{ selected_location or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="q" class="form-control" placeholder="Search services..." value="{{ search_query or '' }}">
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Apply Filters</button>
+                        <a href="{{ url_for('services_page') }}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if services %}
+            <div class="row g-4">
+                {% for service in services %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <!-- Fixed image container -->
+                        <div class="card-img-top" style="height: 200px; overflow: hidden;">
+                            {% if service.image_filename %}
+                                <img src="{{ get_image_url(service.image_filename) }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ service.title }}">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center h-100">
+                                    <i class="fas fa-tools fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-primary">{{ service.category }}</span>
                             </div>
                         </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ service.title }}</h5>
+                            <p class="card-text text-muted">{{ service.description[:100] }}{% if service.description|length > 100 %}...{% endif %}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ service.location or 'Remote' }}</span>
+                                </div>
+                                <div>
+                                    {% if service.price_type == 'quote' %}
+                                        <span class="fw-bold">Quote based</span>
+                                    {% elif service.price_min and service.price_max %}
+                                        <span class="fw-bold">{{ currency }}{{ "%.0f"|format(service.price_min) }} – {{ currency }}{{ "%.0f"|format(service.price_max) }}</span>
+                                    {% elif service.price_min %}
+                                        <span class="fw-bold">From {{ currency }}{{ "%.0f"|format(service.price_min) }}</span>
+                                    {% else %}
+                                        <span class="fw-bold">Contact for price</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mt-2">
+                                <div class="me-2">
+                                    {% if service.provider.avatar_url %}
+                                        <img src="{{ service.provider.avatar_url }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 0.7rem;">
+                                            {{ service.provider.first_name[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span class="small">{{ service.provider.full_name }}</span>
+                                    <span class="small text-muted ms-2">
+                                        <i class="fas fa-star text-warning"></i>
+                                        {{ "%.1f"|format(service.provider.average_rating) }} ({{ service.provider.review_count }})
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{{ url_for('service_detail', service_id=service.id) }}" class="btn btn-outline-primary w-100">View Details</a>
+                        </div>
                     </div>
-                    
-                    <a href="{{ url_for('service_detail', service_id=service.id) }}" class="btn btn-outline btn-block">View Details</a>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
 
-        <div class="pagination">
-            {% if pagination.has_prev %}
-                <a href="{{ url_for('services_page', page=pagination.prev_num, category=selected_category, location=selected_location, q=search_query) }}" class="btn btn-outline">&laquo; Previous</a>
-            {% else %}
-                <span class="btn btn-text disabled">&laquo; Previous</span>
-            {% endif %}
-
-            <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
-
-            {% if pagination.has_next %}
-                <a href="{{ url_for('services_page', page=pagination.next_num, category=selected_category, location=selected_location, q=search_query) }}" class="btn btn-outline">Next &raquo;</a>
-            {% else %}
-                <span class="btn btn-text disabled">Next &raquo;</span>
-            {% endif %}
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <i class="fas fa-search"></i>
-            <h3>No services found</h3>
-            <p>Try adjusting your filters or search terms.</p>
-            <a href="{{ url_for('services_page') }}" class="btn btn-primary">Clear Filters</a>
-        </div>
-    {% endif %}
+            <!-- Pagination -->
+            <nav aria-label="Service pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('services_page', page=pagination.prev_num, category=selected_category, location=selected_location, q=search_query) }}">Previous</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} of {{ pagination.pages }}</span></li>
+                    {% if pagination.has_next %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('services_page', page=pagination.next_num, category=selected_category, location=selected_location, q=search_query) }}">Next</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4>No services found</h4>
+                <p class="text-muted">Try adjusting your filters or search terms.</p>
+                <a href="{{ url_for('services_page') }}" class="btn btn-primary">Clear Filters</a>
+            </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

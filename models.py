@@ -38,7 +38,7 @@ class UserRole(enum.Enum):
 class BookingStatus(enum.Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
-    IN_PROGRESS = "in_progress"   # <-- new status
+    IN_PROGRESS = "in_progress"   # new status
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
@@ -59,7 +59,8 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20))
     whatsapp_number = db.Column(db.String(20))
     avatar_url = db.Column(db.String(500))
-    role = db.Column(db.Enum(UserRole), default=UserRole.CUSTOMER, nullable=False)
+    # ⭐ CHANGE: role is now nullable – default None for new Google users
+    role = db.Column(db.Enum(UserRole), nullable=True, default=None)
     is_oauth = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,111 +1,34 @@
 {% extends "base.html" %}
 
 {% block title %}Sign Up{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
 {% block content %}
-<div class="auth-page">
-    <div class="auth-container">
-        <div class="auth-header">
-            <h1>Create Account</h1>
-            <p>Join QuickScope to find or offer local services</p>
-        </div>
-        
-        <form method="POST" class="auth-form" id="registerForm">
-            <div class="form-row">
-                <div class="form-group">
-                    <label>First Name</label>
-                    <input type="text" name="first_name" required>
-                </div>
-                <div class="form-group">
-                    <label>Last Name</label>
-                    <input type="text" name="last_name" required>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" name="email" required placeholder="you@example.com">
-            </div>
-            
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" required minlength="6" id="password">
-            </div>
-            
-            <div class="form-group">
-                <label>Phone</label>
-                <input type="tel" name="phone" placeholder="082 123 4567">
-            </div>
-            
-            <div class="form-group">
-                <label>WhatsApp Number (optional)</label>
-                <input type="tel" name="whatsapp_number" placeholder="For direct bookings">
-            </div>
-            
-            <div class="form-group">
-                <label>I want to:</label>
-                <div class="role-selector">
-                    <label class="role-option">
-                        <input type="radio" name="role" value="customer" checked onchange="toggleProviderFields()">
-                        <div class="role-card">
-                            <i class="fas fa-user"></i>
-                            <span>Hire Services</span>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-body p-5">
+                        <h1 class="card-title text-center mb-4">Create Account</h1>
+                        <p class="text-center text-muted">Join QuickScope to find or offer local services</p>
+
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Manual registration is disabled.</strong>
+                            <p class="mt-2 mb-0">Please use your Google account to sign up. It's quick, secure, and helps us verify your identity.</p>
+                            <a href="{{ url_for('login_google') }}" class="btn btn-google btn-block mt-3">
+                                <i class="fab fa-google me-2"></i> Continue with Google
+                            </a>
                         </div>
-                    </label>
-                    <label class="role-option">
-                        <input type="radio" name="role" value="provider" onchange="toggleProviderFields()">
-                        <div class="role-card">
-                            <i class="fas fa-briefcase"></i>
-                            <span>Offer Services</span>
-                        </div>
-                    </label>
+
+                        <p class="text-center mt-4">
+                            Already have an account? <a href="{{ url_for('login') }}">Admin Login</a>
+                        </p>
+                    </div>
                 </div>
             </div>
-            
-            <div id="providerFields" style="display: none;">
-                <div class="form-group">
-                    <label>Business Name</label>
-                    <input type="text" name="business_name">
-                </div>
-                <div class="form-group">
-                    <label>Business Description</label>
-                    <textarea name="business_description" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Service Location</label>
-                    <input type="text" name="location" placeholder="City, Province">
-                </div>
-            </div>
-            
-            <div class="form-group terms-checkbox">
-                <label class="checkbox-label">
-                    <input type="checkbox" name="agree_terms" required>
-                    <span>I have read and agree to the <a href="{{ url_for('terms') }}" target="_blank">Terms & Conditions</a></span>
-                </label>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-block btn-lg">Create Account</button>
-        </form>
-        
-        <div class="auth-divider">
-            <span>or sign up with</span>
         </div>
-        
-        <a href="{{ url_for('login_google') }}" class="btn btn-google btn-block">
-            <i class="fab fa-google"></i>
-            Continue with Google
-        </a>
-        
-        <p class="auth-footer">
-            Already have an account? <a href="{{ url_for('login') }}">Log in</a>
-        </p>
     </div>
 </div>
-
-<script>
-function toggleProviderFields() {
-    const isProvider = document.querySelector('input[name="role"]:checked').value === 'provider';
-    document.getElementById('providerFields').style.display = isProvider ? 'block' : 'none';
-}
-</script>
 {% endblock %}

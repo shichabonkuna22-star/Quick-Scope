@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 import json
 import requests
@@ -7,6 +10,8 @@ from functools import wraps
 from urllib.parse import urlencode
 from werkzeug.utils import secure_filename
 import pytz
+import cloudinary
+import cloudinary.uploader
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
@@ -22,7 +27,14 @@ from models import Notification, ChatMessage
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Ensure upload folder exists
+# Cloudinary configuration
+cloudinary.config(
+    cloud_name=app.config['CLOUDINARY_CLOUD_NAME'],
+    api_key=app.config['CLOUDINARY_API_KEY'],
+    api_secret=app.config['CLOUDINARY_API_SECRET']
+)
+
+# Ensure upload folder exists (optional – Cloudinary now handles uploads)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
@@ -49,15 +61,12 @@ def ensure_schema():
     """Add any missing columns to the bookings table (and others if needed)."""
     try:
         inspector = inspect(db.engine)
-        # Check for bookings.started_at
         columns = [col['name'] for col in inspector.get_columns('bookings')]
         if 'started_at' not in columns:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE bookings ADD COLUMN started_at TIMESTAMP'))
                 conn.commit()
                 print("✅ Added column started_at to bookings table.")
-        # Add any other missing columns here if needed
-        # e.g., if you later add more columns, add them here with similar checks
     except Exception as e:
         print(f"⚠️ Schema update warning: {e}")
 
@@ -288,7 +297,6 @@ def seed_database():
 # ---------- Create tables, seed, and ensure schema ----------
 with app.app_context():
     db.create_all()
-    # ✅ Ensure missing columns are added
     ensure_schema()
 
     admin_email = "admin@quickscope.com"
@@ -305,7 +313,6 @@ with app.app_context():
         db.session.commit()
         print("Default admin created: admin@quickscope.com / admin123")
     else:
-        # ✅ Force the role to ADMIN in case it was wrong
         if admin.role != UserRole.ADMIN:
             admin.role = UserRole.ADMIN
             db.session.commit()
@@ -482,9 +489,9 @@ def create_service():
         if 'service_image' in request.files:
             file = request.files['service_image']
             if file and allowed_file(file.filename):
-                filename = secure_filename(f"{datetime.utcnow().timestamp()}_{file.filename}")
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                image_filename = filename
+                # Upload to Cloudinary
+                upload_result = cloudinary.uploader.upload(file)
+                image_filename = upload_result['secure_url']
 
         service = Service(
             provider_id=current_user.id,
@@ -500,7 +507,6 @@ def create_service():
         db.session.add(service)
         db.session.commit()
 
-        # Notify admin about new service
         admin = get_admin_user()
         if admin:
             create_notification(
@@ -528,13 +534,8 @@ def edit_service(service_id):
         if 'service_image' in request.files:
             file = request.files['service_image']
             if file and allowed_file(file.filename):
-                if service.image_filename and not service.image_filename.startswith(('http://', 'https://')):
-                    old_path = os.path.join(app.config['UPLOAD_FOLDER'], service.image_filename)
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-                filename = secure_filename(f"{datetime.utcnow().timestamp()}_{file.filename}")
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                service.image_filename = filename
+                upload_result = cloudinary.uploader.upload(file)
+                service.image_filename = upload_result['secure_url']
 
         service.title = request.form['title']
         service.category = request.form['category']
@@ -567,8 +568,9 @@ def upload_gallery_image():
         return redirect(url_for('manage_gallery'))
     file = request.files['gallery_image']
     if file and allowed_file(file.filename):
-        filename = secure_filename(f"{datetime.utcnow().timestamp()}_{file.filename}")
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        # Upload to Cloudinary
+        upload_result = cloudinary.uploader.upload(file)
+        filename = upload_result['secure_url']
         caption = request.form.get('caption', '')
         gallery_image = GalleryImage(
             provider_id=current_user.id,
@@ -590,10 +592,7 @@ def delete_gallery_image(image_id):
     if image.provider_id != current_user.id:
         flash('Unauthorized.', 'error')
         return redirect(url_for('manage_gallery'))
-    if not image.image_filename.startswith(('http://', 'https://')):
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], image.image_filename)
-        if os.path.exists(file_path):
-            os.remove(file_path)
+    # No need to delete from Cloudinary here; just remove the DB record.
     db.session.delete(image)
     db.session.commit()
     flash('Image deleted.', 'success')
@@ -622,7 +621,6 @@ def request_scope(service_id):
         )
         db.session.add(scope)
         db.session.commit()
-        # Notify provider
         create_notification(
             user_id=service.provider_id,
             type='scope_requested',
@@ -647,7 +645,6 @@ def respond_scope(scope_id):
     scope.status = ScopeStatus.RESPONDED
     scope.responded_at = datetime.utcnow()
     db.session.commit()
-    # Notify customer
     create_notification(
         user_id=scope.customer_id,
         type='scope_responded',
@@ -679,7 +676,6 @@ def accept_scope(scope_id):
     )
     db.session.add(booking)
     db.session.commit()
-    # Notify provider about new booking
     create_notification(
         user_id=scope.provider_id,
         type='booking_created',
@@ -694,30 +690,25 @@ def accept_scope(scope_id):
 @app.route('/bookings')
 @login_required
 def my_bookings():
-    # Pagination settings for bookings
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     if per_page not in [5, 10, 15]:
         per_page = 10
 
-    # Pagination settings for scope requests (separate)
     scope_page = request.args.get('scope_page', 1, type=int)
     scope_per_page = request.args.get('scope_per_page', 10, type=int)
     if scope_per_page not in [5, 10, 15]:
         scope_per_page = 10
 
     if current_user.role == UserRole.CUSTOMER:
-        # Bookings
         bookings_query = Booking.query.filter_by(customer_id=current_user.id).order_by(Booking.created_at.desc())
         bookings_pagination = bookings_query.paginate(page=page, per_page=per_page, error_out=False)
         bookings = bookings_pagination.items
 
-        # Scope requests
         scopes_query = ScopeRequest.query.filter_by(customer_id=current_user.id).order_by(ScopeRequest.created_at.desc())
         scopes_pagination = scopes_query.paginate(page=scope_page, per_page=scope_per_page, error_out=False)
         scopes = scopes_pagination.items
     else:
-        # Provider
         bookings_query = Booking.query.filter_by(provider_id=current_user.id).order_by(Booking.created_at.desc())
         bookings_pagination = bookings_query.paginate(page=page, per_page=per_page, error_out=False)
         bookings = bookings_pagination.items
@@ -738,7 +729,7 @@ def my_bookings():
 @login_required
 def update_booking_status(booking_id):
     booking = Booking.query.get_or_404(booking_id)
-    action = request.form.get('action')  # 'confirm', 'start', 'complete', 'cancel'
+    action = request.form.get('action')
     if current_user.role == UserRole.CUSTOMER and booking.customer_id != current_user.id:
         return jsonify({'error': 'Unauthorized'}), 403
     if current_user.role == UserRole.PROVIDER and booking.provider_id != current_user.id:
@@ -836,7 +827,6 @@ def direct_booking(service_id):
     )
     db.session.add(booking)
     db.session.commit()
-    # Notify provider
     create_notification(
         user_id=service.provider_id,
         type='booking_created',
@@ -897,7 +887,7 @@ def respond_to_review(review_id):
         flash('Response cannot be empty.', 'error')
     return redirect(url_for('service_detail', service_id=review.service_id))
 
-# ==================== NOTIFICATIONS (with pagination) ====================
+# ==================== NOTIFICATIONS ====================
 @app.route('/notifications')
 @login_required
 def notifications():
@@ -930,7 +920,7 @@ def mark_all_notifications_read():
     db.session.commit()
     return jsonify({'success': True})
 
-# ==================== CHAT (Provider-Customer & Admin) ====================
+# ==================== CHAT ====================
 @app.route('/chat/conversations')
 @login_required
 def chat_conversations():
@@ -1101,7 +1091,6 @@ def admin_send_chat():
     )
     db.session.add(chat_msg)
     db.session.commit()
-    user = User.query.get(user_id)
     create_notification(
         user_id=user_id,
         type='chat_message',
@@ -1114,31 +1103,8 @@ def admin_send_chat():
 # ==================== AUTH ====================
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    if request.method == 'POST':
-        email = request.form['email']
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered.', 'error')
-            return redirect(url_for('register'))
-        user = User(
-            email=email,
-            password_hash=generate_password_hash(request.form['password']),
-            first_name=request.form['first_name'],
-            last_name=request.form['last_name'],
-            phone=request.form.get('phone'),
-            whatsapp_number=request.form.get('whatsapp_number'),
-            role=UserRole(request.form['role']),
-            business_name=request.form.get('business_name'),
-            business_description=request.form.get('business_description'),
-            location=request.form.get('location')
-        )
-        db.session.add(user)
-        db.session.commit()
-        login_user(user)
-        flash('Welcome to QuickScope!', 'success')
-        return redirect(url_for('index'))
-    return render_template('register.html')
+    flash('Please use Google Sign‑In to create an account.', 'info')
+    return redirect(url_for('login_google'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1147,10 +1113,14 @@ def login():
     if request.method == 'POST':
         user = User.query.filter_by(email=request.form['email']).first()
         if user and check_password_hash(user.password_hash, request.form['password']):
-            login_user(user, remember=request.form.get('remember') == 'on')
-            next_page = request.args.get('next')
-            flash(f'Welcome back, {user.first_name}!', 'success')
-            return redirect(next_page or url_for('index'))
+            if user.role == UserRole.ADMIN:
+                login_user(user, remember=request.form.get('remember') == 'on')
+                next_page = request.args.get('next')
+                flash(f'Welcome back, {user.first_name}!', 'success')
+                return redirect(next_page or url_for('index'))
+            else:
+                flash('Non‑admin users must log in with Google.', 'error')
+                return redirect(url_for('login_google'))
         flash('Invalid email or password.', 'error')
     return render_template('login.html')
 
@@ -1215,13 +1185,34 @@ def google_callback():
             last_name=userinfo.get("family_name", "User"),
             avatar_url=userinfo.get("picture"),
             is_oauth=True,
-            role=UserRole.CUSTOMER
+            role=None
         )
         db.session.add(user)
         db.session.commit()
+
     login_user(user)
+    if user.role is None:
+        return redirect(url_for('choose_role'))
+
     flash(f'Welcome, {user.first_name}!', 'success')
     return redirect(url_for('index'))
+
+# ==================== ROLE SELECTION ====================
+@app.route('/choose-role', methods=['GET', 'POST'])
+@login_required
+def choose_role():
+    if current_user.role is not None:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        chosen = request.form.get('role')
+        if chosen in ['customer', 'provider']:
+            current_user.role = UserRole(chosen)
+            db.session.commit()
+            flash(f'You are now registered as a {chosen}. Welcome!', 'success')
+            return redirect(url_for('index'))
+        flash('Please select a valid role.', 'error')
+    return render_template('choose_role.html')
 
 # ==================== PROFILE & DASHBOARD ====================
 @app.route('/profile', methods=['GET', 'POST'])

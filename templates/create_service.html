@@ -1,89 +1,100 @@
 {% extends "base.html" %}
 
 {% block title %}{{ 'Edit' if edit_mode else 'Create' }} Service{% endblock %}
+{% block page_title %}{{ 'Edit Service' if edit_mode else 'List a New Service' }}{% endblock %}
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+{% if current_user.role.value == 'provider' %}
+<li class="breadcrumb-item"><a href="{{ url_for('provider_dashboard') }}">Dashboard</a></li>
+{% endif %}
+<li class="breadcrumb-item active text-primary">{{ 'Edit' if edit_mode else 'Create' }}</li>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="form-page">
-        <h1>{{ 'Edit' if edit_mode else 'List a New Service' }}</h1>
-        
-        <form method="POST" class="service-form" enctype="multipart/form-data">
-            <div class="form-group">
-                <label>Service Title *</label>
-                <input type="text" name="title" required value="{{ service.title if edit_mode else '' }}" placeholder="e.g., Professional House Cleaning">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Category *</label>
-                    <select name="category" required>
-                        <option value="">Select category...</option>
-                        <option value="Cleaning" {{ 'selected' if edit_mode and service.category == 'Cleaning' else '' }}>Cleaning</option>
-                        <option value="Repairs" {{ 'selected' if edit_mode and service.category == 'Repairs' else '' }}>Repairs</option>
-                        <option value="Moving" {{ 'selected' if edit_mode and service.category == 'Moving' else '' }}>Moving</option>
-                        <option value="Gardening" {{ 'selected' if edit_mode and service.category == 'Gardening' else '' }}>Gardening</option>
-                        <option value="Tutoring" {{ 'selected' if edit_mode and service.category == 'Tutoring' else '' }}>Tutoring</option>
-                        <option value="Design" {{ 'selected' if edit_mode and service.category == 'Design' else '' }}>Design</option>
-                        <option value="Tech Support" {{ 'selected' if edit_mode and service.category == 'Tech Support' else '' }}>Tech Support</option>
-                        <option value="Photography" {{ 'selected' if edit_mode and service.category == 'Photography' else '' }}>Photography</option>
-                        <option value="Other" {{ 'selected' if edit_mode and service.category == 'Other' else '' }}>Other</option>
-                    </select>
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body p-5">
+                        <form method="POST" class="needs-validation" enctype="multipart/form-data" novalidate>
+                            <div class="mb-3">
+                                <label class="form-label">Service Title <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" required value="{{ service.title if edit_mode else '' }}" placeholder="e.g., Professional House Cleaning">
+                            </div>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Category <span class="text-danger">*</span></label>
+                                    <select name="category" class="form-select" required>
+                                        <option value="">Select category...</option>
+                                        <option value="Cleaning" {{ 'selected' if edit_mode and service.category == 'Cleaning' else '' }}>Cleaning</option>
+                                        <option value="Repairs" {{ 'selected' if edit_mode and service.category == 'Repairs' else '' }}>Repairs</option>
+                                        <option value="Moving" {{ 'selected' if edit_mode and service.category == 'Moving' else '' }}>Moving</option>
+                                        <option value="Gardening" {{ 'selected' if edit_mode and service.category == 'Gardening' else '' }}>Gardening</option>
+                                        <option value="Tutoring" {{ 'selected' if edit_mode and service.category == 'Tutoring' else '' }}>Tutoring</option>
+                                        <option value="Design" {{ 'selected' if edit_mode and service.category == 'Design' else '' }}>Design</option>
+                                        <option value="Tech Support" {{ 'selected' if edit_mode and service.category == 'Tech Support' else '' }}>Tech Support</option>
+                                        <option value="Photography" {{ 'selected' if edit_mode and service.category == 'Photography' else '' }}>Photography</option>
+                                        <option value="Other" {{ 'selected' if edit_mode and service.category == 'Other' else '' }}>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Location</label>
+                                    <input type="text" name="location" class="form-control" value="{{ service.location if edit_mode else '' }}" placeholder="City, State">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 mt-3">
+                                <label class="form-label">Description <span class="text-danger">*</span></label>
+                                <textarea name="description" class="form-control" rows="5" required placeholder="Describe what you offer, your experience, and what customers can expect...">{{ service.description if edit_mode else '' }}</textarea>
+                            </div>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Price Type</label>
+                                    <select name="price_type" class="form-select">
+                                        <option value="fixed" {{ 'selected' if edit_mode and service.price_type == 'fixed' else '' }}>Fixed Price</option>
+                                        <option value="hourly" {{ 'selected' if edit_mode and service.price_type == 'hourly' else '' }}>Hourly Rate</option>
+                                        <option value="quote" {{ 'selected' if edit_mode and service.price_type == 'quote' else '' }}>Quote Based</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Min Price ({{ currency }})</label>
+                                    <input type="number" name="price_min" class="form-control" step="0.01" min="0" value="{{ service.price_min if edit_mode else '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Max Price ({{ currency }})</label>
+                                    <input type="number" name="price_max" class="form-control" step="0.01" min="0" value="{{ service.price_max if edit_mode else '' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Service Image</label>
+                                <input type="file" name="service_image" class="form-control" accept="image/*">
+                                {% if edit_mode and service.image_filename %}
+                                    <p class="mt-2">Current image: <img src="{{ url_for('static', filename='uploads/' + service.image_filename) }}" width="100" class="img-thumbnail"></p>
+                                {% endif %}
+                            </div>
+                            
+                            {% if edit_mode %}
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" name="is_active" class="form-check-input" {{ 'checked' if service.is_active else '' }}>
+                                <label class="form-check-label">Service is active and visible</label>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="d-flex gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    {{ 'Update Service' if edit_mode else 'Create Listing' }}
+                                </button>
+                                <a href="{{ url_for('provider_dashboard') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label>Location</label>
-                    <input type="text" name="location" value="{{ service.location if edit_mode else '' }}" placeholder="City, State">
-                </div>
             </div>
-            
-            <div class="form-group">
-                <label>Description *</label>
-                <textarea name="description" rows="5" required placeholder="Describe what you offer, your experience, and what customers can expect...">{{ service.description if edit_mode else '' }}</textarea>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Price Type</label>
-                    <select name="price_type">
-                        <option value="fixed" {{ 'selected' if edit_mode and service.price_type == 'fixed' else '' }}>Fixed Price</option>
-                        <option value="hourly" {{ 'selected' if edit_mode and service.price_type == 'hourly' else '' }}>Hourly Rate</option>
-                        <option value="quote" {{ 'selected' if edit_mode and service.price_type == 'quote' else '' }}>Quote Based</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Min Price ({{ currency }})</label>
-                    <input type="number" name="price_min" step="0.01" min="0" value="{{ service.price_min if edit_mode else '' }}">
-                </div>
-                <div class="form-group">
-                    <label>Max Price ({{ currency }})</label>
-                    <input type="number" name="price_max" step="0.01" min="0" value="{{ service.price_max if edit_mode else '' }}">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>Service Image</label>
-                <input type="file" name="service_image" accept="image/*">
-                {% if edit_mode and service.image_filename %}
-                    <p>Current image: <img src="{{ url_for('static', filename='uploads/' + service.image_filename) }}" width="100"></p>
-                {% endif %}
-            </div>
-            
-            {% if edit_mode %}
-            <div class="form-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" name="is_active" {{ 'checked' if service.is_active else '' }}>
-                    <span>Service is active and visible</span>
-                </label>
-            </div>
-            {% endif %}
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    {{ 'Update Service' if edit_mode else 'Create Listing' }}
-                </button>
-                <a href="{{ url_for('provider_dashboard') }}" class="btn btn-text">Cancel</a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -60,15 +60,28 @@ def get_admin_user():
 
 # ---------- Helper for database schema updates ----------
 def ensure_schema():
-    """Add any missing columns to the bookings table (and others if needed)."""
+    """Add any missing columns to the bookings and users tables."""
     try:
         inspector = inspect(db.engine)
-        columns = [col['name'] for col in inspector.get_columns('bookings')]
-        if 'started_at' not in columns:
+
+        # Check for bookings.started_at
+        columns_bookings = [col['name'] for col in inspector.get_columns('bookings')]
+        if 'started_at' not in columns_bookings:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE bookings ADD COLUMN started_at TIMESTAMP'))
                 conn.commit()
                 print("✅ Added column started_at to bookings table.")
+
+        # Check for users.whatsapp_number
+        columns_users = [col['name'] for col in inspector.get_columns('users')]
+        if 'whatsapp_number' not in columns_users:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(20)'))
+                conn.commit()
+                print("✅ Added column whatsapp_number to users table.")
+
+        # You can add other missing columns here in the future.
+
     except Exception as e:
         print(f"⚠️ Schema update warning: {e}")
 
@@ -299,7 +312,7 @@ def seed_database():
 # ---------- Create tables, seed, and ensure schema ----------
 with app.app_context():
     db.create_all()
-    ensure_schema()
+    ensure_schema()  # ✅ This will add missing columns like whatsapp_number
 
     admin_email = "admin@quickscope.com"
     admin = User.query.filter_by(email=admin_email).first()

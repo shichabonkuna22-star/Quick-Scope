@@ -17,7 +17,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import or_, inspect, text
+from sqlalchemy import or_, inspect, text, create_engine
 
 from config import Config
 from models import db, User, Service, GalleryImage, ScopeRequest, Booking, Review, UserRole, BookingStatus, ScopeStatus
@@ -27,6 +27,22 @@ from models import Notification, ChatMessage
 app = Flask(__name__)
 app.instance_path = '/tmp'
 app.config.from_object(Config)
+
+# ---- Database engine options for Neon (fix SSL disconnects) ----
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_size': 5,
+    'max_overflow': 10,
+    'connect_args': {
+        'connect_timeout': 10,
+        'keepalives': 1,
+        'keepalives_idle': 30,
+        'keepalives_interval': 10,
+        'keepalives_count': 5
+    }
+}
+# --------------------------------------------------------------
 
 # Cloudinary configuration
 cloudinary.config(
@@ -354,7 +370,7 @@ def seed_database():
 # ---------- Create tables, seed, and ensure schema ----------
 with app.app_context():
     db.create_all()
-    ensure_schema()  # ✅ Adds missing columns and makes nullable
+    ensure_schema()
 
     admin_email = "admin@quickscope.com"
     admin = User.query.filter_by(email=admin_email).first()
@@ -546,8 +562,11 @@ def create_service():
         if 'service_image' in request.files:
             file = request.files['service_image']
             if file and allowed_file(file.filename):
-                upload_result = cloudinary.uploader.upload(file)
-                image_filename = upload_result['secure_url']
+                try:
+                    upload_result = cloudinary.uploader.upload(file)
+                    image_filename = upload_result['secure_url']
+                except Exception as e:
+                    flash(f'Image upload failed: {str(e)}', 'error')
 
         service = Service(
             provider_id=current_user.id,
@@ -590,8 +609,11 @@ def edit_service(service_id):
         if 'service_image' in request.files:
             file = request.files['service_image']
             if file and allowed_file(file.filename):
-                upload_result = cloudinary.uploader.upload(file)
-                service.image_filename = upload_result['secure_url']
+                try:
+                    upload_result = cloudinary.uploader.upload(file)
+                    service.image_filename = upload_result['secure_url']
+                except Exception as e:
+                    flash(f'Image upload failed: {str(e)}', 'error')
 
         service.title = request.form['title']
         service.category = request.form['category']
@@ -624,17 +646,20 @@ def upload_gallery_image():
         return redirect(url_for('manage_gallery'))
     file = request.files['gallery_image']
     if file and allowed_file(file.filename):
-        upload_result = cloudinary.uploader.upload(file)
-        filename = upload_result['secure_url']
-        caption = request.form.get('caption', '')
-        gallery_image = GalleryImage(
-            provider_id=current_user.id,
-            image_filename=filename,
-            caption=caption
-        )
-        db.session.add(gallery_image)
-        db.session.commit()
-        flash('Image uploaded to gallery.', 'success')
+        try:
+            upload_result = cloudinary.uploader.upload(file)
+            filename = upload_result['secure_url']
+            caption = request.form.get('caption', '')
+            gallery_image = GalleryImage(
+                provider_id=current_user.id,
+                image_filename=filename,
+                caption=caption
+            )
+            db.session.add(gallery_image)
+            db.session.commit()
+            flash('Image uploaded to gallery.', 'success')
+        except Exception as e:
+            flash(f'Image upload failed: {str(e)}', 'error')
     else:
         flash('Invalid file type.', 'error')
     return redirect(url_for('manage_gallery'))
@@ -1205,11 +1230,13 @@ def login_google():
 def google_callback():
     code = request.args.get("code")
     if not code:
-        flash('Google login failed.', 'error')
+        flash('Google login failed – no code received.', 'error')
         return redirect(url_for('login'))
+
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
     token_endpoint = google_provider_cfg["token_endpoint"]
     redirect_uri = url_for('google_callback', _external=True)
+
     token_response = requests.post(
         token_endpoint,
         data={
@@ -1221,17 +1248,34 @@ def google_callback():
         },
     )
     tokens = token_response.json()
+
+    # --- Check for errors in token response ---
+    if 'error' in tokens:
+        error_msg = tokens.get('error_description', tokens.get('error', 'Unknown error'))
+        flash(f'Google token exchange failed: {error_msg}', 'error')
+        print(f"OAuth Error: {error_msg}")  # appears in Vercel logs
+        return redirect(url_for('login'))
+
+    if 'access_token' not in tokens:
+        flash('Google token response missing access_token. Please try again.', 'error')
+        print(f"OAuth invalid token response: {tokens}")
+        return redirect(url_for('login'))
+
+    # --- Fetch user info ---
     userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
     userinfo_response = requests.get(
         userinfo_endpoint,
         headers={"Authorization": f"Bearer {tokens['access_token']}"},
     )
     userinfo = userinfo_response.json()
+
     if not userinfo.get("email_verified"):
         flash('Google email not verified.', 'error')
         return redirect(url_for('login'))
+
     email = userinfo["email"]
     user = User.query.filter_by(email=email).first()
+
     if not user:
         user = User(
             email=email,
